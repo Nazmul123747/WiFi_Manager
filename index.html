@@ -1,0 +1,824 @@
+<!doctype html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+  
+  <meta name="theme-color" content="#3b5998">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  
+  <title>WiFi Manager Pro</title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  
+  <style>
+    body { background-color: #f0f2f5; margin: 0; font-family: 'Segoe UI', sans-serif; font-size: 14px; color: #333; max-width: 650px; margin: 0 auto; padding-bottom: 80px; user-select: none; -webkit-tap-highlight-color: transparent; scroll-behavior: smooth; }
+    .wap-header { background-color: #3b5998; color: #fff; padding: 12px 15px; font-weight: bold; font-size: 16px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .wap-box { border: 1px solid #cbd5e1; margin: 15px 10px; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    .box-head { background: #3b5998; color: white; padding: 10px 15px; font-weight: bold; display:flex; justify-content:space-between; }
+    .box-content { padding: 15px; }
+    .wap-inp, .wap-sel { border: 1px solid #cbd5e1; padding: 8px; width: 100%; box-sizing: border-box; border-radius: 4px; height: 38px; }
+    .wap-btn { background: #3b5998; color: white; border: 1px solid #1e293b; padding: 8px 12px; font-weight: bold; cursor: pointer; border-radius: 4px; }
+
+    /* TODAY'S ACTIVITY */
+    .today-card { margin: 10px; background: white; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow: hidden; }
+    .tc-head { padding: 10px 15px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; font-weight: bold; color: #334155; background: #f8fafc; }
+    .tc-grid { display: flex; padding: 10px; gap: 10px; }
+    .tc-item { flex: 1; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 5px; text-align: center; }
+    
+    .dash-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #e2e8f0; }
+    .d-item { background: #fff; padding: 15px 5px; text-align: center; display: flex; flex-direction: column; justify-content: center; height: 70px; }
+    .d-lbl { font-size: 11px; color: #64748b; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
+    .d-val { font-size: 18px; font-weight: 800; color: #1e293b; }
+
+    #list { display: flex; flex-direction: column; gap: 12px; padding: 15px; }
+    .client-card { background: #fff; border-radius: 10px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 5px solid #ccc; transition: all 0.3s ease; }
+    .card-paid { border-left-color: #22c55e; opacity: 0.9; } .card-due { border-left-color: #f59e0b; } 
+    .card-exp { border-left-color: #ef4444; border: 2px solid #fee2e2; } .card-free { border-left-color: #06b6d4; }
+    .card-header { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px dashed #eee; padding-bottom: 8px; }
+    .c-name { font-size: 16px; font-weight: bold; color: #1e293b; }
+    .card-body { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px; color: #555; }
+    .prev-due-box { grid-column: span 2; background: #fef2f2; color: #dc2626; padding: 5px; border-radius: 4px; font-weight: bold; text-align: center; border: 1px dashed #fca5a5; margin-top: 5px; }
+    .card-actions { display: flex; gap: 8px; margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px; }
+    .btn-icon { flex: 1; border: none; padding: 8px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; display:flex; align-items:center; justify-content:center; gap:5px; }
+    .btn-call { background: #e0f2fe; color: #0284c7; } .btn-wa { background: #dcfce7; color: #16a34a; } .btn-edit { background: #f1f5f9; color: #475569; }
+
+    .wap-footer { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 2px solid #3b5998; padding: 10px 0; display: flex; justify-content: space-around; z-index: 100; max-width: 650px; margin: 0 auto; }
+    .f-item { color: #64748b; text-decoration: none; font-weight: bold; font-size: 11px; display:flex; flex-direction:column; align-items:center; }
+    .f-item.active { color: #3b5998; }
+    .modal-ov { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 200; }
+    .modal-box { background: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px; }
+    
+    #syncStatus { font-size: 11px; color: white; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 10px; margin-left: 10px; display: inline-block; }
+
+    /* Quick Scroll Buttons */
+    .scroll-btns { position: fixed; bottom: 85px; right: 15px; display: flex; flex-direction: column; gap: 10px; z-index: 99; }
+    .s-btn { background: rgba(59, 89, 152, 0.85); color: white; border: none; padding: 0; width: 40px; height: 40px; border-radius: 50%; box-shadow: 0 4px 6px rgba(0,0,0,0.2); cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+  </style>
+</head>
+<body>
+<div style="text-align:center; margin:20px;">
+  <button class="wap-btn" onclick="hardReset()" style="background:#f59e0b;">
+    🔄 Reset Local Cache (New List)
+  </button>
+</div>
+  <div class="wap-header">
+    <div style="display:flex; align-items:center;">
+        <i class="fas fa-wifi"></i> &nbsp; WiFi Manager
+        <span id="syncStatus"><i class="fas fa-check"></i> Ready</span>
+    </div>
+    <div style="cursor: pointer; font-size:13px; background:rgba(255,255,255,0.2); padding:4px 8px; border-radius:4px;" onclick="forceSave()">
+      <i class="fas fa-sync-alt"></i> Sync
+    </div>
+  </div>
+
+  <div class="wap-box">
+    <div class="box-head" style="justify-content:center;">Select Month</div>
+    <div style="display: flex; gap: 10px; justify-content: center; align-items: center; background: #f8fafc; padding: 15px;">
+      <input type="month" id="monthInput" onchange="handleMonthChange(this.value)" class="wap-inp" style="width:auto;">
+      <button class="wap-btn" style="background:#dc2626;" onclick="archiveAndReset()">End Month</button>
+    </div>
+    <div id="viewStatus" style="text-align:center; padding:5px; font-size:12px; font-weight:bold; color:#16a34a; background:#f0fdf4; border-top:1px solid #e2e8f0;">
+        ⚡ Live Data (Auto Sync On)
+    </div>
+  </div>
+
+  <div class="today-card">
+    <div class="tc-head">
+      <span><i class="fas fa-calendar-check" style="color:#3b5998; margin-right:5px;"></i> TODAY'S ACTIVITY</span>
+      <span style="font-size:11px; font-weight:bold; color:#64748b;" id="todayDate"></span>
+    </div>
+    <div class="tc-grid">
+      <div class="tc-item" style="border-color:#bbf7d0; background:#f0fdf4">
+        <span style="font-size:11px; color:#16a34a; font-weight:bold;">Collected</span>
+        <div style="font-weight:bold; font-size:16px; color:#16a34a" id="tColl">0</div>
+      </div>
+      <div class="tc-item" style="border-color:#fecaca; background:#fef2f2">
+        <span style="font-size:11px; color:#dc2626; font-weight:bold;">Expense</span>
+        <div style="font-weight:bold; font-size:16px; color:#dc2626" id="tExp">0</div>
+      </div>
+      <div class="tc-item" style="border-color:#bae6fd; background:#f0f9ff">
+        <span style="font-size:11px; color:#0284c7; font-weight:bold;">Profit</span>
+        <div style="font-weight:bold; font-size:16px; color:#0284c7" id="tNet">0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wap-box">
+    <div class="box-head">Dashboard Overview</div>
+    <div class="dash-grid">
+      <div class="d-item"><div class="d-lbl">Active (All)</div><div class="d-val" id="vAct">0</div></div>
+      <div class="d-item"><div class="d-lbl">Paid User</div><div class="d-val" style="color:#16a34a" id="vPaid">0</div></div>
+      <div class="d-item"><div class="d-lbl">Unpaid User</div><div class="d-val" style="color:#f59e0b" id="vUnpaid">0</div></div>
+      
+      <div class="d-item"><div class="d-lbl">Current Due</div><div class="d-val" style="color:#d97706" id="vCurrDue">0</div></div>
+      <div class="d-item"><div class="d-lbl">Prev. Due</div><div class="d-val" style="color:#dc2626" id="vPrevDueTotal">0</div></div>
+      <div class="d-item"><div class="d-lbl">Collected</div><div class="d-val" style="color:#3b5998" id="vColl">0</div></div>
+      
+      <div class="d-item"><div class="d-lbl">Expired</div><div class="d-val" style="color:#ef4444" id="vExp">0</div></div>
+      <div class="d-item" onclick="openExpModal()"><div class="d-lbl" style="text-decoration:underline; cursor:pointer; color:#ef4444;">Total Exp.</div><div class="d-val" style="color:#ef4444" id="vExpense">0</div></div>
+      <div class="d-item"><div class="d-lbl">Net Profit</div><div class="d-val" style="color:#16a34a" id="vNet">0</div></div>
+    </div>
+  </div>
+
+  <div class="wap-box" style="position: sticky; top: 50px; z-index: 40; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+    <div class="box-content" style="padding-bottom:5px;">
+        <select id="filterArea" class="wap-sel" style="background:#f1f5f9; font-weight:bold; color:#3b5998;" onchange="render()">
+            <option value="all">📍 All Areas (সব এলাকা)</option>
+            <option value="Boiddonat">Boiddonat</option>
+            <option value="Fotekha">Fotekha</option>
+            <option value="Sorkar tari">Sorkar tari</option>
+            <option value="Chaitantola">Chaitantola</option>
+            <option value="Khamar">Khamar</option>
+            <option value="hobiyar dokan">hobiyar dokan</option>
+            <option value="Master er mor">Master er mor</option>
+        </select>
+    </div>
+    <div class="box-content" style="display:flex; gap:8px; padding-top:0;">
+      <input id="search" class="wap-inp" placeholder="Search by Name, ID..." style="flex:1; border: 2px solid #3b5998;">
+      <button class="wap-btn" onclick="openModal()"><i class="fas fa-plus"></i> Add</button>
+    </div>
+  </div>
+
+  <div class="wap-box">
+    <div class="box-head">Client List</div>
+    <div id="list"></div>
+  </div>
+
+  <div class="scroll-btns">
+    <button class="s-btn" onclick="window.scrollTo(0,0)"><i class="fas fa-arrow-up"></i></button>
+    <button class="s-btn" onclick="window.scrollTo(0, document.body.scrollHeight)"><i class="fas fa-arrow-down"></i></button>
+  </div>
+
+  <div style="height: 80px;"></div>
+
+  <div class="wap-footer">
+    <a href="#" class="f-item active" onclick="setFilter('all')"><i class="fas fa-users"></i> All</a>
+    <a href="#" class="f-item" onclick="setFilter('paid')"><i class="fas fa-check-circle"></i> Paid</a>
+    <a href="#" class="f-item" onclick="setFilter('unpaid')"><i class="fas fa-exclamation-circle"></i> Unpaid</a>
+    <a href="#" class="f-item" onclick="setFilter('due')"><i class="fas fa-hand-holding-usd"></i> Due</a>
+    <a href="#" class="f-item" onclick="openExpModal()"><i class="fas fa-receipt"></i> Exp</a>
+  </div>
+
+  <div class="modal-ov" id="modalOv">
+    <div class="modal-box">
+      <h3 style="margin-top:0; color:#3b5998;">Client Details</h3>
+      <input type="hidden" id="m_id">
+      <input id="m_name" class="wap-inp" placeholder="Name" style="margin-bottom:8px;">
+      
+      <label style="font-size:12px; font-weight:bold; color:#666;">Select Area:</label>
+      <select id="m_area" class="wap-sel" style="margin-bottom:8px; border-color:#3b5998;">
+          <option value="">-- Select Area --</option>
+          <option value="Boiddonat">Boiddonat</option>
+          <option value="Fotekha">Fotekha</option>
+          <option value="Sorkar tari">Sorkar tari</option>
+          <option value="Chaitantola">Chaitantola</option>
+          <option value="Khamar">Khamar</option>
+          <option value="hobiyar dokan">hobiyar dokan</option>
+          <option value="Master er mor">Master er mor</option>
+      </select>
+
+      <input id="m_user" class="wap-inp" placeholder="User ID" style="margin-bottom:8px;">
+      <input id="m_mob" class="wap-inp" type="tel" placeholder="Mobile" style="margin-bottom:8px;">
+      <div style="display:flex; gap:10px; margin-bottom:8px;">
+        <select id="m_pkg" class="wap-sel" onchange="setBill()">
+            <option value="5Mbps">5Mbps</option><option value="10Mbps">10Mbps</option>
+            <option value="12Mbps">12Mbps</option><option value="20Mbps">20Mbps</option>
+        </select>
+        <input id="m_bill" type="number" class="wap-inp" placeholder="Bill">
+      </div>
+      
+      <label style="font-size:12px; font-weight:bold; color:#666;">Expire Date:</label>
+      <input id="m_expDate" type="date" class="wap-inp" style="margin-bottom:8px; border:2px solid #ef4444;">
+      
+      <input id="m_prevDue" type="number" class="wap-inp" placeholder="Previous Due" style="margin-bottom:15px; border-color:#fca5a5;">
+      <div style="display:flex; gap:10px;">
+        <button class="wap-btn" style="flex:1; background:#64748b;" onclick="$('modalOv').style.display='none'">Cancel</button>
+        <button class="wap-btn" style="flex:1;" onclick="saveUser()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-ov" id="expOv">
+    <div class="modal-box">
+      <h3 style="margin-top:0; color:#ef4444;">Expenses <i class="fas fa-times" onclick="$('expOv').style.display='none'" style="float:right;cursor:pointer;color:#333;"></i></h3>
+      <input id="ex_reason" class="wap-inp" placeholder="Reason" style="margin-bottom:8px;">
+      <input id="ex_amount" type="number" class="wap-inp" placeholder="Amount" style="margin-bottom:8px;">
+      <button class="wap-btn" onclick="saveExpense()" style="width:100%; background:#ef4444;">Add</button>
+      <div id="expList" style="max-height:200px; overflow-y:auto; margin-top:10px;"></div>
+    </div>
+  </div>
+
+<script>
+  // ================= CONFIG & INIT =================
+  const DB_KEY = 'wifi_local_cache'; 
+  const QUEUE_KEY = 'wifi_sync_queue';
+
+  // !!! IMPORTANT: YOUR SPECIFIC SUPABASE KEYS !!!
+  const SUPABASE_URL = 'https://afybenuinfrszbudovvw.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFmeWJlbnVpbmZyc3pidWRvdnZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzNDkwMTYsImV4cCI6MjA3OTkyNTAxNn0.cxtcvmXvVMPy-hhLq2NNk5T_3K-kZJBUCaBAgG3my9g';
+
+  const $ = id => document.getElementById(id);
+  const pkgRates = {"5Mbps":300, "10Mbps":400, "12Mbps":500, "20Mbps":800};
+  let currentFilter = 'all';
+  let users = [], expenses = [], archives = [];
+  let viewMode = false;
+  let currentActiveMonthStr = "";
+
+  const getTodayStr = () => new Date().toISOString().split('T')[0];
+
+  async function sbFetch(path, options = {}) {
+    const url = `${SUPABASE_URL}/rest/v1/${path}`;
+    const headers = {
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      Prefer: 'return=representation'
+    };
+    const res = await fetch(url, { ...options, headers: { ...headers, ...(options.headers || {}) } });
+    if (!res.ok) throw new Error(`${res.status}`);
+    return res.status === 204 ? null : res.json();
+  }
+
+  // ====== Sync Queue (Offline-first) ======
+  function getQueue() { try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); } catch { return []; } }
+  function setQueue(q) { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); }
+  function enqueue(op) { const q = getQueue(); q.push({ ...op, ts: Date.now() }); setQueue(q); updateStatus('Pending Sync...', true); }
+  
+  async function flushSyncQueue() {
+    const q = getQueue();
+    if (q.length === 0) return;
+    
+    updateStatus(`Syncing ${q.length} items...`, true);
+    let successCount = 0;
+    const failedOps = [];
+
+    for (const op of q) {
+      try {
+        if (op.type === 'upsertUser') {
+          await sbFetch('users', { method: 'POST', body: JSON.stringify({ ...op.data, updated_at: new Date().toISOString() }), headers: { 'Prefer': 'resolution=merge-duplicates' } });
+        } else if (op.type === 'updateUser') {
+          await sbFetch(`users?id=eq.${encodeURIComponent(op.id)}`, { method: 'PATCH', body: JSON.stringify({ ...op.data, updated_at: new Date().toISOString() }) });
+        } else if (op.type === 'upsertExpense') {
+          await sbFetch('expenses', { method: 'POST', body: JSON.stringify({ ...op.data, updated_at: new Date().toISOString() }), headers: { 'Prefer': 'resolution=merge-duplicates' } });
+        } else if (op.type === 'deleteExpense') {
+          await sbFetch(`expenses?id=eq.${encodeURIComponent(op.id)}`, { method: 'DELETE' });
+        } else if (op.type === 'upsertArchive') {
+          await sbFetch('archives', { method: 'POST', body: JSON.stringify(op.data) });
+        }
+        successCount++;
+      } catch (e) {
+        console.error("Sync Op Failed:", e);
+        failedOps.push(op); 
+      }
+    }
+    setQueue(failedOps);
+    if (failedOps.length === 0) updateStatus('Synced to Cloud', false);
+    else updateStatus(`Synced ${successCount}, Pending ${failedOps.length}`, false);
+  }
+
+  function init() {
+    const now = new Date();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    currentActiveMonthStr = `${now.getFullYear()}-${mm}`;
+    $('monthInput').value = currentActiveMonthStr;
+    $('todayDate').innerText = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    
+    loadFromLocal();
+    render(); 
+    setTimeout(fetchData, 1500); 
+  }
+
+  function loadFromLocal() {
+      const local = localStorage.getItem(DB_KEY);
+      if(local) {
+          const d = JSON.parse(local);
+          users = d.users || []; expenses = d.expenses || []; archives = d.archives || [];
+      } else {
+          // NEW DATA LIST from uploaded CSV
+          const initialUsers = [
+            {id:"4000121",name:"Rashedul Islam",user:"maidul002",pkg:"12Mbps",mob:"01710256861",expDate:"2025-12-04"},
+            {id:"4000130",name:"SANARUL MIA",user:"anarul001",pkg:"12Mbps",mob:"01317141624",expDate:"2025-12-04"},
+            {id:"4000131",name:"Nazmulmama",user:"mithi",pkg:"12Mbps",mob:"01719024069",expDate:"2025-12-04"},
+            {id:"4000132",name:"Beauty Begum",user:"nobita",pkg:"12Mbps",mob:"01746629084",expDate:"2025-12-04"},
+            {id:"4000133",name:"Hazrat Ali",user:"hazratali1",pkg:"12Mbps",mob:"01747677330",expDate:"2025-12-04"},
+            {id:"4000135",name:"Nazmul",user:"monira",pkg:"12Mbps",mob:"01763230767",expDate:"2025-12-04"},
+            {id:"4000136",name:"Resme Begum",user:"resme",pkg:"12Mbps",mob:"01747677330",expDate:"2025-12-04"},
+            {id:"4000137",name:"Jabel Mia",user:"jabel",pkg:"12Mbps",mob:"01898593554",expDate:"2025-12-04"},
+            {id:"4000138",name:"Abdur Rahim",user:"abdurrahim",pkg:"12Mbps",mob:"01311696081",expDate:"2025-08-04"},
+            {id:"4000139",name:"Hosen",user:"hosen",pkg:"12Mbps",mob:"01314930688",expDate:"2025-11-04"},
+            {id:"4000141",name:"Arju Sir",user:"arjusir",pkg:"12Mbps",mob:"01747834908",expDate:"2025-12-04"},
+            {id:"4000190",name:"Joynal",user:"joynal67",pkg:"12Mbps",mob:"01799548454",expDate:"2025-12-04"},
+            {id:"4000207",name:"munni1",user:"munni1",pkg:"12Mbps",mob:"01798868454",expDate:"2025-12-04"},
+            {id:"4000230",name:"LAKU HOME",user:"lakuhome",pkg:"12Mbps",mob:"01776956550",expDate:"2025-12-04"},
+            {id:"4000259",name:"abulhossain",user:"abulhossain1",pkg:"12Mbps",mob:"01678964321",expDate:"2025-12-04"},
+            {id:"4000272",name:"Shakib",user:"shakib01",pkg:"12Mbps",mob:"01307028779",expDate:"2025-12-04"},
+            {id:"4000273",name:"Adnan home",user:"adnanhome",pkg:"12Mbps",mob:"01317141660",expDate:"2025-12-04"},
+            {id:"4000274",name:"shefayet",user:"shefayet",pkg:"12Mbps",mob:"01822444315",expDate:"2025-12-04"},
+            {id:"4000275",name:"Mamun",user:"mamun590",pkg:"12Mbps",mob:"01877740590",expDate:"2025-12-04"},
+            {id:"4000277",name:"Roni Vagina",user:"roni",pkg:"12Mbps",mob:"01617386582",expDate:"2025-12-04"},
+            {id:"4000281",name:"ABDUR RAZZAK",user:"razzak",pkg:"12Mbps",mob:"01606355906",expDate:"2025-12-04"},
+            {id:"4000282",name:"Rashedul Mia",user:"rashedul1",pkg:"12Mbps",mob:"01774789693",expDate:"2025-12-04"},
+            {id:"4000122",name:"Yahya uncle",user:"yahya",pkg:"12Mbps",mob:"01958613614",expDate:"2025-12-04"},
+            {id:"4000144",name:"limon",user:"limon41",pkg:"12Mbps",mob:"0188578695",expDate:"2025-12-04"},
+            {id:"4000154",name:"forhad",user:"forhad",pkg:"12Mbps",mob:"01731951455",expDate:"2025-12-04"},
+            {id:"4000163",name:"Samiul Baiddonath",user:"samiul2",pkg:"12Mbps",mob:"01334046707",expDate:"2025-12-04"},
+            {id:"4000164",name:"Moklesur",user:"moklesur1",pkg:"12Mbps",mob:"01734698647",expDate:"2025-12-04"},
+            {id:"4000167",name:"jahurul",user:"jahurul",pkg:"12Mbps",mob:"017795244855",expDate:"2025-12-04"},
+            {id:"4000168",name:"Jasim",user:"jasim5",pkg:"12Mbps",mob:"01602654185",expDate:"2025-12-04"},
+            {id:"4000172",name:"harun1",user:"harun1",pkg:"12Mbps",mob:"01840784546",expDate:"2025-12-04"},
+            {id:"4000174",name:"layon2",user:"layon2",pkg:"12Mbps",mob:"01770656921",expDate:"2025-12-04"},
+            {id:"4000176",name:"nurislam01",user:"nurislam1",pkg:"12Mbps",mob:"01798568454",expDate:"2025-12-04"},
+            {id:"4000178",name:"champa",user:"champa",pkg:"12Mbps",mob:"01798868454",expDate:"2025-12-04"},
+            {id:"4000179",name:"totamil",user:"totamil",pkg:"12Mbps",mob:"01701645779",expDate:"2025-12-04"},
+            {id:"4000180",name:"Shipon",user:"shipon",pkg:"12Mbps",mob:"01798865464",expDate:"2025-12-04"},
+            {id:"4000181",name:"Sajedul Islam",user:"sajedul515",pkg:"12Mbps",mob:"01919576113",expDate:"2025-12-04"},
+            {id:"4000182",name:"ASHRAFUL",user:"ashraful",pkg:"12Mbps",mob:"01744775182",expDate:"2025-12-04"},
+            {id:"4000184",name:"MALEK VAI",user:"malekvai",pkg:"12Mbps",mob:"01750783816",expDate:"2025-12-04"},
+            {id:"4000187",name:"hazimass",user:"hazimass",pkg:"12Mbps",mob:"01345868454",expDate:"2025-12-04"},
+            {id:"4000188",name:"Mojid member",user:"tajul1",pkg:"12Mbps",mob:"01326006911",expDate:"2025-12-04"},
+            {id:"4000189",name:"Layon",user:"layon",pkg:"12Mbps",mob:"01770656921",expDate:"2025-12-04"},
+            {id:"4000191",name:"Rita",user:"ritatrading",pkg:"12Mbps",mob:"01798876454",expDate:"2025-12-04"},
+            {id:"4000192",name:"akkas",user:"akkas1",pkg:"12Mbps",mob:"01733074088",expDate:"2025-11-04"},
+            {id:"4000197",name:"RIYAD",user:"riyad01",pkg:"12Mbps",mob:"01719707650",expDate:"2025-12-04"},
+            {id:"4000198",name:"Aminul",user:"aminul",pkg:"12Mbps",mob:"01798814370",expDate:"2025-12-04"},
+            {id:"4000199",name:"Tajrul",user:"tajrul",pkg:"12Mbps",mob:"01889081172",expDate:"2025-12-04"},
+            {id:"4000200",name:"kd firoz",user:"kdfiroz",pkg:"12Mbps",mob:"01773185003",expDate:"2025-12-04"},
+            {id:"4000201",name:"MADRASHA",user:"madrasha",pkg:"12Mbps",mob:"01739895652",expDate:"2025-12-04"},
+            {id:"4000202",name:"Samiul Sami",user:"samiul07",pkg:"12Mbps",mob:"01776607502",expDate:"2025-12-04"},
+            {id:"4000208",name:"shadhin01",user:"shadhin01",pkg:"12Mbps",mob:"01701645779",expDate:"2025-12-04"},
+            {id:"4000209",name:"jihad01",user:"jihad01",pkg:"12Mbps",mob:"01798865464",expDate:"2025-11-04"},
+            {id:"4000210",name:"Rasel",user:"raselkaku",pkg:"12Mbps",mob:"01799548454",expDate:"2025-12-04"},
+            {id:"4000216",name:"Mostofa",user:"mostofa001",pkg:"12Mbps",mob:"01345868454",expDate:"2025-12-04"},
+            {id:"4000217",name:"jamiul",user:"jamiul",pkg:"12Mbps",mob:"01798868454",expDate:"2025-12-04"},
+            {id:"4000219",name:"Arif",user:"arif01",pkg:"12Mbps",mob:"01719825362",expDate:"2025-12-04"},
+            {id:"4000226",name:"maruf baiddonath",user:"maruf01",pkg:"12Mbps",mob:"01605873904",expDate:"2025-12-04"},
+            {id:"4000227",name:"office0001",user:"office0001",pkg:"20Mbps",mob:"01798568454",expDate:"2025-04-04"},
+            {id:"4000228",name:"nazmul01",user:"nazmul01",pkg:"12Mbps",mob:"01779309423",expDate:"2025-12-04"},
+            {id:"4000229",name:"rasel",user:"rasel92",pkg:"12Mbps",mob:"01771306192",expDate:"2025-12-04"},
+            {id:"4000231",name:"APCL FREE WIFI",user:"freewifi",pkg:"12Mbps",mob:"01776956550",expDate:"2025-04-04"},
+            {id:"4000234",name:"osmangone",user:"osmangone",pkg:"12Mbps",mob:"01777777770",expDate:"2025-12-04"},
+            {id:"4000236",name:"monjurul",user:"monjurul",pkg:"12Mbps",mob:"01766554433",expDate:"2025-11-04"},
+            {id:"4000237",name:"jahid",user:"jahid02",pkg:"12Mbps",mob:"01317141660",expDate:"2025-12-04"},
+            {id:"4000238",name:"FARUK VAI",user:"faruk431",pkg:"12Mbps",mob:"01740298431",expDate:"2025-12-04"},
+            {id:"4000240",name:"Shibram College",user:"shibramcollege",pkg:"12Mbps",mob:"01309121764",expDate:"2025-12-04"},
+            {id:"4000241",name:"Taher",user:"taher",pkg:"12Mbps",mob:"01300935156",expDate:"2025-12-04"},
+            {id:"4000243",name:"Shakil",user:"shakil75",pkg:"12Mbps",mob:"01734701828",expDate:"2025-12-04"},
+            {id:"4000261",name:"faruk",user:"farukmia",pkg:"12Mbps",mob:"01783012175",expDate:"2025-12-04"},
+            {id:"4000262",name:"Sujan baiddonath",user:"sujon1",pkg:"12Mbps",mob:"01920331190",expDate:"2025-12-04"},
+            {id:"4000263",name:"ASHRAFUL",user:"apon",pkg:"12Mbps",mob:"01301366273",expDate:"2025-12-04"},
+            {id:"4000265",name:"Maruf Vaiya",user:"maruf",pkg:"12Mbps",mob:"01774992920",expDate:"2025-12-04"},
+            {id:"4000266",name:"SALMAN",user:"salman1",pkg:"12Mbps",mob:"01614510029",expDate:"2025-11-04"},
+            {id:"4000267",name:"Ebramhim",user:"ebrahim",pkg:"12Mbps",mob:"01853756807",expDate:"2025-12-04"},
+            {id:"4000268",name:"JHORU",user:"jahurul2",pkg:"12Mbps",mob:"01324048811",expDate:"2025-12-04"},
+            {id:"4000269",name:"Laku",user:"nahid44",pkg:"12Mbps",mob:"01797838732",expDate:"2025-12-04"},
+            {id:"4000270",name:"Zia",user:"ziavai",pkg:"12Mbps",mob:"01730434641",expDate:"2025-12-04"},
+            {id:"4000271",name:"Rejaul",user:"rejaulsir",pkg:"12Mbps",mob:"01722535514",expDate:"2025-11-04"},
+            {id:"4000276",name:"Mukul mia",user:"mukulmia1",pkg:"12Mbps",mob:"01303590729",expDate:"2025-12-04"},
+            {id:"4000278",name:"LEBU",user:"lebu",pkg:"12Mbps",mob:"01717213686",expDate:"2025-12-04"},
+            {id:"4000279",name:"MAMUN BAIDDONATH",user:"mamun325",pkg:"12Mbps",mob:"01611521325",expDate:"2025-12-04"},
+            {id:"4000280",name:"Alomgir belertol",user:"smalomgir",pkg:"12Mbps",mob:"01867761406",expDate:"2025-12-04"},
+            {id:"4000283",name:"Siju Store",user:"sijuStore",pkg:"12Mbps",mob:"01706016765",expDate:"2025-12-04"}
+          ]; 
+          // Re-initialize with new fields
+          if(!localStorage.getItem('first_run_done_v2')) {
+             users = initialUsers.map(u => ({
+                 ...u,
+                 conn: 'Active', 
+                 pay: 'Unpaid', 
+                 due: 0, 
+                 prevDue: 0, 
+                 bill: pkgRates[u.pkg] || 500, 
+                 area: '',
+                 expDate: u.expDate || ''
+             }));
+             localStorage.setItem('first_run_done_v2', 'true');
+             saveData(true);
+          }
+      }
+  }
+
+  // Fetch logic: Merge remote data with local to prevent loss
+  async function fetchData() {
+    const q = getQueue();
+    if (q.length > 0) {
+      await flushSyncQueue();
+      if (getQueue().length > 0) {
+        updateStatus('Offline (Local Data Kept)', false);
+        return; 
+      }
+    }
+
+    updateStatus('Syncing...', true);
+    try {
+      const [remoteUsers, remoteExpenses, remoteArchives] = await Promise.all([
+        sbFetch('users?select=*'),
+        sbFetch('expenses?select=*'),
+        sbFetch('archives?select=*')
+      ]);
+      
+      // MERGE LOGIC: Keep local static list, update status from server
+      if (remoteUsers) {
+        // If server is empty but local has data (First Time Setup), Push local to server
+        if(remoteUsers.length === 0 && users.length > 0) {
+             updateStatus('Initializing Cloud DB...', true);
+             // We won't push automatically here to avoid spam, but users will push on edit
+        }
+        else {
+             const rMap = new Map(remoteUsers.map(r => [String(r.id), r]));
+             
+             // 1. Update existing local users from Remote
+             users = users.map(u => {
+                const r = rMap.get(u.id);
+                if(!r) return u; // Keep local version if not on server
+                return {
+                   ...u,
+                   // Update status fields
+                   conn: r.conn, pay: r.pay, due: r.due, prevDue: r.prev_due, 
+                   expDate: r.exp_date || u.expDate, // Use remote date if present
+                   bill: r.bill, area: r.area || u.area // Sync Area
+                };
+             });
+
+             // 2. Add new users from Remote that are missing locally
+             remoteUsers.forEach(r => {
+                if(!users.find(u => u.id == r.id)) {
+                    users.push({
+                        id: String(r.id), name: r.name, user: r.user_id, 
+                        pkg: r.pkg, mob: r.mob, bill: Number(r.bill),
+                        conn: r.conn, pay: r.pay, due: Number(r.due), 
+                        prevDue: Number(r.prev_due), expDate: r.exp_date, area: r.area
+                    });
+                }
+             });
+        }
+      }
+
+      if (remoteExpenses && remoteExpenses.length > 0) {
+        expenses = remoteExpenses.map(r => ({
+          id: String(r.id),
+          desc: r.desc,
+          amnt: Number(r.amnt) || 0,
+          date: r.date || null
+        }));
+      }
+
+      if (remoteArchives && remoteArchives.length > 0) {
+        archives = remoteArchives.map(r => ({
+          id: String(r.id),
+          name: r.name,
+          data: r.data
+        }));
+      }
+
+      localStorage.setItem(DB_KEY, JSON.stringify({ users, expenses, archives }));
+      render();
+      updateStatus('Online & Synced', false);
+
+    } catch (e) {
+      console.log("Fetch Error", e);
+      // Don't show offline if keys are missing, it's confusing
+      if(e.message !== "Missing Keys") {
+          updateStatus('Offline Mode', false);
+      } else {
+          updateStatus('Setup Required', false);
+      }
+    }
+  }
+
+  function saveData(silent = false) {
+    const payload = { users, expenses, archives };
+    localStorage.setItem(DB_KEY, JSON.stringify(payload));
+    if(!silent) render();
+    if(navigator.onLine && getQueue().length > 0) {
+        flushSyncQueue();
+    }
+  }
+
+  function updateStatus(msg, spin) {
+      const el = $('syncStatus');
+      el.style.display = 'inline-block';
+      el.innerHTML = spin ? `<i class="fas fa-circle-notch fa-spin"></i> ${msg}` : `<i class="fas fa-check"></i> ${msg}`;
+      if(msg.includes('Offline') || msg.includes('Pending')) el.style.background = '#dc2626';
+      else if(msg.includes('Setup')) el.style.background = '#f59e0b';
+      else el.style.background = 'rgba(255,255,255,0.2)';
+  }
+
+  // Force Save now fetches data too
+  async function forceSave() { 
+      updateStatus('Saving...', true);
+      saveData(true); 
+      await flushSyncQueue(); 
+      await fetchData(); // Pull latest changes
+  }
+
+  function hardReset() {
+      if(confirm("Are you sure? This deletes local data and loads the NEW list from code.")) {
+          localStorage.removeItem(DB_KEY);
+          localStorage.removeItem('first_run_done_v2'); // Force reload of new list
+          location.reload();
+      }
+  }
+
+  function updPay(id, v) { 
+      if(viewMode) return; 
+      const u = users.find(x=>x.id==id); 
+      u.pay = v; 
+      if(v === 'Paid') {
+          u.conn = 'Active';
+          u.payDate = getTodayStr();
+          
+          // --- LOGIC FOR NEXT MONTH 4th ---
+          const d = new Date();
+          // Add 1 month to current date
+          d.setMonth(d.getMonth() + 1);
+          // Set to the 4th
+          d.setDate(4);
+          u.expDate = d.toISOString().split('T')[0];
+          // --------------------------------
+
+      } else {
+          u.payDate = null;
+          if(u.conn === 'Free') u.conn = 'Free';
+          else u.conn = 'Active';
+      }
+      enqueue({ type: 'updateUser', id, data: { pay: u.pay, conn: u.conn, pay_date: u.payDate, exp_date: u.expDate } });
+      saveData(); 
+  }
+
+  function updConn(id, v) { 
+      if(viewMode) return; 
+      const u = users.find(x=>x.id==id);
+      u.conn = v; 
+      enqueue({ type: 'updateUser', id, data: { conn: v } });
+      saveData(); 
+  }
+  
+  function updDue(id, v) { 
+      if(viewMode) return; 
+      const u = users.find(x=>x.id==id);
+      u.due = Number(v); 
+      enqueue({ type: 'updateUser', id, data: { due: u.due } });
+      saveData(); 
+  }
+
+  // ================= RENDER LOGIC =================
+  function render() {
+    const list = $('list');
+    const term = ($('search').value || '').toLowerCase();
+    const filterArea = $('filterArea').value;
+    list.innerHTML = '';
+    
+    let st = {act:0, paid:0, unpaid:0, exp:0, free:0, coll:0, totalDue:0, prevDueTotal:0};
+    let tColl=0, tExp=0; 
+    
+    const todayStr = getTodayStr();
+
+    // Sorting: Unpaid > Due > Expired > Others
+    const getWeight = u => {
+        if(u.conn === 'Active' && u.pay === 'Unpaid') return 4;
+        if(u.due > 0) return 3;
+        if(u.prevDue > 0) return 2;
+        if(u.conn === 'Expired') return 1;
+        return 0; 
+    };
+
+    const sorted = [...users].sort((a,b) => {
+        const wA = getWeight(a);
+        const wB = getWeight(b);
+        if(wA !== wB) return wB - wA; 
+        return a.name.localeCompare(b.name);
+    });
+
+    sorted.forEach(u => {
+      // Area Filter Logic
+      if(filterArea !== 'all' && u.area !== filterArea) return;
+
+      const bill = Number(u.bill) || 0;
+      const due = Number(u.due) || 0;
+      const prev = Number(u.prevDue) || 0;
+
+      let collected = 0;
+
+      if(u.conn === 'Free') { st.free++; st.act++; } 
+      else if(u.conn === 'Expired') { st.exp++; st.prevDueTotal += prev; } 
+      else {
+          st.act++;
+          st.totalDue += due;
+          st.prevDueTotal += prev;
+          if(u.pay === 'Paid') st.paid++; else st.unpaid++;
+
+          if(due > 0) collected = bill - due;
+          else if(u.pay === 'Paid') collected = bill;
+          else collected = 0;
+          
+          if(collected < 0) collected = 0;
+          st.coll += collected;
+          if(u.payDate === todayStr) tColl += collected;
+      }
+
+      // Search
+      const searchText = (u.name + u.mob + u.user + u.id + (u.area||'')).toLowerCase();
+      if(!searchText.includes(term)) return;
+
+      if(currentFilter === 'paid' && (u.conn !== 'Active' || u.pay !== 'Paid')) return;
+      if(currentFilter === 'unpaid' && (u.conn !== 'Active' || u.pay !== 'Unpaid')) return;
+      if(currentFilter === 'due' && u.due <= 0 && u.prevDue <= 0) return;
+
+      let cardClass = 'client-card', badge = '';
+      
+      if(u.conn === 'Free') { 
+          cardClass += ' card-free'; 
+          badge = '<span style="background:#ccfbf1; color:#0f766e; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:bold;">Free</span>'; 
+      }
+      else if(u.conn === 'Expired') { 
+          cardClass += ' card-exp'; 
+          badge = '<span style="background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:bold;">Expired</span>'; 
+      }
+      else if(u.pay === 'Paid') { 
+          cardClass += ' card-paid'; 
+          if(due > 0) {
+             badge = '<span style="background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:bold;">Partial Paid</span>'; 
+          } else {
+             badge = '<span style="background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:bold;">Paid Full</span>'; 
+          }
+      }
+      else { 
+          cardClass += ' card-due'; 
+          badge = '<span style="background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:bold;">Due Bill</span>'; 
+      }
+
+      const controls = viewMode ? '' : `
+        <div style="background:#f8fafc; padding:8px; border-radius:6px; display:flex; gap:5px; margin-bottom:10px; align-items:center;">
+            <select class="wap-sel" style="flex:1; height:32px; padding:0 5px;" onchange="updConn('${u.id}', this.value)">
+                <option ${u.conn==='Active'?'selected':''}>Active</option>
+                <option ${u.conn==='Expired'?'selected':''}>Expired</option>
+                <option ${u.conn==='Free'?'selected':''}>Free</option>
+            </select>
+            ${u.conn === 'Active' ? `
+            <select class="wap-sel" style="flex:1; height:32px; padding:0 5px;" onchange="updPay('${u.id}', this.value)">
+                <option ${u.pay==='Unpaid'?'selected':''}>Unpaid</option>
+                <option ${u.pay==='Paid'?'selected':''}>Paid</option>
+            </select>
+            <input class="wap-inp" type="number" value="${u.due}" onchange="updDue('${u.id}',this.value)" placeholder="Due" style="width:50px; height:32px; padding:0 5px; text-align:center; color:red; font-weight:bold;">
+            ` : ''}
+        </div>`;
+
+      const prevDueHtml = u.prevDue > 0 ? `<div class="prev-due-box">⚠️ সাবেক বাকি: ${u.prevDue}৳</div>` : '';
+      const nameExtra = u.prevDue > 0 ? '<span style="color:#dc2626; font-size:11px; margin-left:5px; background:#fef2f2; padding:2px 5px; border-radius:4px;">(সাবেক আছে)</span>' : '';
+      const areaBadge = u.area ? `<span style="font-size:11px; color:#3b5998; background:#e0f2fe; padding:2px 5px; border-radius:4px; margin-left:5px;"><i class="fas fa-map-marker-alt"></i> ${u.area}</span>` : '';
+      
+      // Expire Date Display
+      const expDateHtml = u.expDate ? `<div style="color:#666; font-size:12px; margin-top:5px; padding-top:2px; border-top:1px dashed #ddd;"><i class="fas fa-calendar-alt" style="color:#ef4444;"></i> Exp: <b>${u.expDate}</b></div>` : '';
+
+      const html = `
+      <div class="${cardClass}">
+        <div class="card-header">
+            <div><div class="c-name">${u.name} ${nameExtra}</div><small style="color:#666">${u.user} | ID: ${u.id}</small></div>
+            ${badge}
+        </div>
+        <div class="card-body">
+            <div><i class="fas fa-box"></i> ${u.pkg}</div>
+            <div><i class="fas fa-phone"></i> ${u.mob}</div>
+            <div style="grid-column: span 2;">${areaBadge}</div>
+            <div><i class="fas fa-file-invoice"></i> Bill: ${u.bill}৳</div>
+            <div><i class="fas fa-coins"></i> Due: <b style="color:${u.due>0?'red':'green'}">${u.due}৳</b></div>
+            <div style="grid-column: span 2;">${expDateHtml}</div>
+            ${prevDueHtml}
+        </div>
+        ${controls}
+        <div class="card-actions">
+            <button class="btn-icon btn-call" onclick="window.location.href='tel:${u.mob}'"><i class="fas fa-phone"></i> Call</button>
+            <button class="btn-icon btn-wa" onclick="wa('${u.mob}', '${u.pay}', ${u.due}, ${u.prevDue})"><i class="fab fa-whatsapp"></i> App</button>
+            <button class="btn-icon btn-edit" onclick="edit('${u.id}')"><i class="fas fa-edit"></i> Edit</button>
+        </div>
+      </div>`;
+      
+      list.insertAdjacentHTML('beforeend', html);
+    });
+
+    const expenseTotal = expenses.reduce((a,b)=>a+(Number(b.amnt)||0),0);
+    const todayStr2 = getTodayStr();
+    tExp = expenses.filter(e => e.date && e.date === todayStr2).reduce((a,b)=>a+(Number(b.amnt)||0),0);
+
+    $('vAct').innerText = st.act; $('vPaid').innerText = st.paid; $('vUnpaid').innerText = st.unpaid; 
+    $('vExp').innerText = st.exp; $('vCurrDue').innerText = st.totalDue + '৳'; 
+    $('vPrevDueTotal').innerText = st.prevDueTotal + '৳'; $('vColl').innerText = st.coll + '৳';
+    $('vExpense').innerText = expenseTotal + '৳'; $('vNet').innerText = (st.coll - expenseTotal) + '৳';
+    
+    $('tColl').innerText = tColl; $('tExp').innerText = tExp; $('tNet').innerText = (tColl - tExp);
+  }
+
+  function wa(mob, pay, due, prev) { 
+      let n=mob.replace(/\D/g,''); if(n.length<=11) n='88'+n; 
+      let msg = "";
+      if(prev > 0) msg += `আপনার গত মাসের বাকি: ${prev} টাকা। `;
+      if(due > 0) msg += `এই মাসের বিল বাকি: ${due} টাকা। `;
+      if(msg === "") msg = (pay==='Unpaid'?`অনুগ্রহ করে আপনার বিল পরিশোধ করুন।`:`ধন্যবাদ!`);
+      else msg += ` মোট পরিশোধ করুন: ${Number(due)+Number(prev)} টাকা।`;
+      window.open(`https://wa.me/${n}?text=${encodeURIComponent(msg)}`); 
+  }
+
+  function setFilter(type) { if(currentFilter===type && type!=='all') currentFilter='all'; else currentFilter=type; document.querySelectorAll('.f-item').forEach(b=>b.classList.remove('active')); const m={paid:1,unpaid:2,due:3}; if(m[type]) document.querySelectorAll('.f-item')[m[type]].classList.add('active'); else document.querySelectorAll('.f-item')[0].classList.add('active'); render(); }
+  function openExpModal() { if(viewMode)return; $('ex_reason').value=''; $('ex_amount').value=''; renderExpList(); $('expOv').style.display='flex'; }
+  function saveExpense() { 
+      const r=$('ex_reason').value, a=Number($('ex_amount').value); 
+      if(!r||!a) return alert("Enter details"); 
+      const today = getTodayStr();
+      const id = Date.now().toString();
+      expenses.push({id, desc:r, amnt:a, date:today}); 
+      enqueue({ type: 'upsertExpense', data: { id, desc:r, amnt:a, date:today } });
+      saveData(); 
+      $('ex_reason').value=''; $('ex_amount').value=''; renderExpList(); 
+  }
+  function renderExpList() { const l=$('expList'); l.innerHTML=''; [...expenses].reverse().forEach((e,i)=>{ l.innerHTML+=`<div style="border-bottom:1px solid #eee; padding:5px;"><b>${e.desc}</b>: ${e.amnt}tk <small>${e.date}</small> <i class="fas fa-trash" style="color:red;float:right;cursor:pointer;" onclick="delExp(${expenses.length-1-i})"></i></div>`; }); }
+  function delExp(i) { if(!viewMode && confirm('Delete?')) { const e = expenses[i]; if(e && e.id) enqueue({ type: 'deleteExpense', id: e.id }); expenses.splice(i,1); saveData(); renderExpList(); } }
+
+  let editId = null;
+  function openModal() { 
+      if(viewMode)return; editId=null; 
+      $('m_name').value=''; $('m_area').value=''; $('m_mob').value=''; 
+      $('m_bill').value=''; $('m_user').value=''; $('m_prevDue').value=''; 
+      $('m_expDate').value='';
+      $('modalOv').style.display='flex'; 
+  }
+  function setBill() { $('m_bill').value = pkgRates[$('m_pkg').value]; }
+  function edit(id) { 
+      if(viewMode)return; editId=id; const u=users.find(x=>x.id==id); 
+      $('m_name').value=u.name; $('m_mob').value=u.mob; $('m_pkg').value=u.pkg; 
+      $('m_bill').value=u.bill; $('m_user').value=u.user||''; 
+      $('m_area').value=u.area || '';
+      $('m_prevDue').value = u.prevDue || 0; 
+      $('m_expDate').value = u.expDate || '';
+      $('modalOv').style.display='flex'; 
+  }
+  function saveUser() {
+    if(viewMode) return;
+    const d = { 
+        name: $('m_name').value, mob: $('m_mob').value, pkg: $('m_pkg').value, 
+        user: $('m_user').value, bill: Number($('m_bill').value), prevDue: Number($('m_prevDue').value),
+        area: $('m_area').value, expDate: $('m_expDate').value
+    };
+    if(!d.name) return alert("Name required");
+    
+    if(editId) { 
+      const idx = users.findIndex(x=>x.id==editId); 
+      users[idx] = {...users[idx], ...d}; 
+      enqueue({ type: 'updateUser', id: editId, data: {
+        name: d.name, mob: d.mob, pkg: d.pkg, user_id: d.user || null,
+        bill: d.bill, prev_due: d.prevDue, area: d.area, exp_date: d.expDate
+      }});
+    } 
+    else { 
+      const id = Date.now().toString();
+      users.unshift({...d, id, conn:'Active', pay:'Unpaid', due:0, prevDue:d.prevDue||0, payDate:null}); 
+      enqueue({ type: 'upsertUser', data: {
+        id, name: d.name, mob: d.mob, pkg: d.pkg,
+        user_id: d.user || null, bill: d.bill, conn: 'Active', pay: 'Unpaid', due: 0, prev_due: d.prevDue || 0, pay_date: null, area: d.area, exp_date: d.expDate
+      }});
+    }
+    $('modalOv').style.display='none'; saveData();
+  }
+  function archiveAndReset() {
+    if(viewMode) return alert("Switch to current month first");
+    const confirmName = prompt("Start new month? Due will move to 'Prev Due'.\nEnter Name:", $('monthInput').value);
+    if(!confirmName) return;
+    const snapshot = { users: JSON.parse(JSON.stringify(users)), expenses: JSON.parse(JSON.stringify(expenses)) };
+    const archiveId = Date.now().toString();
+    archives.push({ id: archiveId, name: confirmName, data: snapshot });
+    enqueue({ type: 'upsertArchive', data: { id: archiveId, name: confirmName, data: snapshot } });
+
+    users.forEach(u => { 
+        if(u.conn !== 'Free') { 
+             const oldPrev = Number(u.prevDue) || 0;
+             const currentDue = Number(u.due) || 0;
+             u.prevDue = oldPrev + currentDue; 
+             u.conn = 'Expired'; u.pay = 'Unpaid'; u.payDate = null; u.due = 0; 
+             enqueue({ type: 'updateUser', id: u.id, data: { prev_due: u.prevDue, conn: 'Expired', pay: 'Unpaid', pay_date: null, due: 0 } });
+        }
+    });
+    expenses = [];
+    saveData(); alert("New Month Started!");
+  }
+  function handleMonthChange(val) {
+    if(!val) return;
+    if(val === currentActiveMonthStr) {
+        viewMode = false; $('viewStatus').innerText = "⚡ Live Data"; $('viewStatus').style.background = "#f0fdf4"; $('viewStatus').style.color = "#16a34a";
+        fetchData(); return;
+    }
+    const arc = archives.find(a => a.name === val);
+    if(arc) {
+        viewMode = true; $('viewStatus').innerText = "🔒 Viewing History: " + val; $('viewStatus').style.background = "#fffbeb"; $('viewStatus').style.color = "#d97706";
+        users = arc.data.users; expenses = arc.data.expenses; render();
+    } else { alert("No data for " + val); }
+  }
+  
+  // Cleaned up: No Service Worker Logic Here
+  window.addEventListener('online', () => flushSyncQueue());
+  $('search').addEventListener('input', render);
+  init();
+</script>
+</body>
+</html>
