@@ -59,11 +59,7 @@
   </style>
 </head>
 <body>
-<div style="text-align:center; margin:20px;">
-  <button class="wap-btn" onclick="hardReset()" style="background:#f59e0b;">
-    🔄 Reset Local Cache (New List)
-  </button>
-</div>
+
   <div class="wap-header">
     <div style="display:flex; align-items:center;">
         <i class="fas fa-wifi"></i> &nbsp; WiFi Manager
@@ -666,8 +662,8 @@
             ` : ''}
         </div>`;
 
-      const prevDueHtml = u.prevDue > 0 ? `<div class="prev-due-box">⚠️ সাবেক বাকি: ${u.prevDue}৳</div>` : '';
-      const nameExtra = u.prevDue > 0 ? '<span style="color:#dc2626; font-size:11px; margin-left:5px; background:#fef2f2; padding:2px 5px; border-radius:4px;">(সাবেক আছে)</span>' : '';
+      const prevDueHtml = u.prevDue > 0 ? `<div class="prev-due-box">⚠️ আগের বাকি: ${u.prevDue}৳</div>` : '';
+      const nameExtra = u.prevDue > 0 ? '<span style="color:#dc2626; font-size:11px; margin-left:5px; background:#fef2f2; padding:2px 5px; border-radius:4px;">(গত মাসের বাকি আছে)</span>' : '';
       const areaBadge = u.area ? `<span style="font-size:11px; color:#3b5998; background:#e0f2fe; padding:2px 5px; border-radius:4px; margin-left:5px;"><i class="fas fa-map-marker-alt"></i> ${u.area}</span>` : '';
       
       // Expire Date Display
