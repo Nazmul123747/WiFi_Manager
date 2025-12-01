@@ -8,12 +8,14 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   
-  <title>WiFi Manager Pro</title>
+  <title>WiFi Manager Pro Cloud</title>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   
   <style>
+    /* --- SAME CSS AS BEFORE --- */
     body { background-color: #f0f2f5; margin: 0; font-family: 'Segoe UI', sans-serif; font-size: 14px; color: #333; max-width: 650px; margin: 0 auto; padding-bottom: 80px; user-select: none; -webkit-tap-highlight-color: transparent; scroll-behavior: smooth; }
     .wap-header { background-color: #3b5998; color: #fff; padding: 12px 15px; font-weight: bold; font-size: 16px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     .wap-box { border: 1px solid #cbd5e1; margin: 15px 10px; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
@@ -44,37 +46,62 @@
     .card-actions { display: flex; gap: 8px; margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px; }
     .btn-icon { flex: 1; border: none; padding: 8px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; display:flex; align-items:center; justify-content:center; gap:5px; }
     .btn-call { background: #e0f2fe; color: #0284c7; } .btn-wa { background: #dcfce7; color: #16a34a; } .btn-edit { background: #f1f5f9; color: #475569; }
+    .btn-bill { background: #eef2ff; color: #4f46e5; }
+    .btn-hist { background: #fff7ed; color: #ea580c; }
 
     .wap-footer { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 2px solid #3b5998; padding: 10px 0; display: flex; justify-content: space-around; z-index: 100; max-width: 650px; margin: 0 auto; }
     .f-item { color: #64748b; text-decoration: none; font-weight: bold; font-size: 11px; display:flex; flex-direction:column; align-items:center; }
     .f-item.active { color: #3b5998; }
     .modal-ov { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 200; }
-    .modal-box { background: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px; }
+    .modal-box { background: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px; max-height: 80vh; overflow-y: auto; }
     
-    #syncStatus { font-size: 11px; color: white; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 10px; margin-left: 10px; display: inline-block; }
-
-    /* Quick Scroll Buttons */
+    #syncStatus { font-size: 11px; color: white; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 10px; margin-left: 10px; display: inline-block; transition: background 0.3s; }
     .scroll-btns { position: fixed; bottom: 85px; right: 15px; display: flex; flex-direction: column; gap: 10px; z-index: 99; }
     .s-btn { background: rgba(59, 89, 152, 0.85); color: white; border: none; padding: 0; width: 40px; height: 40px; border-radius: 50%; box-shadow: 0 4px 6px rgba(0,0,0,0.2); cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+
+    .chart-container { position: relative; height: 200px; width: 100%; margin-top: 10px; display:flex; justify-content:center; }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .data-table th, .data-table td { border: 1px solid #eee; padding: 6px; text-align: left; }
+    .data-table th { background: #f8fafc; color: #3b5998; }
+
+    /* Security Overlay */
+    #lockScreen { position: fixed; inset: 0; background: #3b5998; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
+
+    @media print {
+        .wap-header, .wap-box, .today-card, .scroll-btns, .wap-footer, .modal-ov, .dash-grid, #filterArea, #list { display: none !important; }
+        body { background: #fff !important; margin: 0 !important; padding: 0 !important; height: auto !important; overflow: visible !important; }
+        #invoiceArea { display: block !important; position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; margin: 0 !important; padding: 20px !important; background: white !important; z-index: 9999 !important; }
+        #invoiceArea * { visibility: visible !important; color: #000 !important; }
+    }
   </style>
 </head>
 <body>
 
+  <div id="lockScreen">
+      <div style="font-size:24px; font-weight:bold; margin-bottom:20px;"><i class="fas fa-lock"></i> Security Check</div>
+      <input type="password" id="pinInput" placeholder="Enter PIN" style="padding:10px; border-radius:5px; border:none; text-align:center; font-size:18px; width:150px;">
+      <button onclick="checkPin()" style="margin-top:15px; padding:8px 20px; background:white; color:#3b5998; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">Unlock</button>
+  </div>
+
   <div class="wap-header">
     <div style="display:flex; align-items:center;">
         <i class="fas fa-wifi"></i> &nbsp; WiFi Manager
-        <span id="syncStatus"><i class="fas fa-check"></i> Ready</span>
+        <span id="syncStatus"><i class="fas fa-circle-notch fa-spin"></i> Checking...</span>
     </div>
-    <div style="cursor: pointer; font-size:13px; background:rgba(255,255,255,0.2); padding:4px 8px; border-radius:4px;" onclick="forceSave()">
-      <i class="fas fa-sync-alt"></i> Sync
+    <div style="display:flex; gap:10px;">
+        <div style="cursor: pointer; font-size:16px;" onclick="openSettings()"><i class="fas fa-cog"></i></div>
+        <div style="cursor: pointer; font-size:13px; background:rgba(255,255,255,0.2); padding:4px 8px; border-radius:4px;" onclick="forceSave()">
+        <i class="fas fa-sync-alt"></i> Sync
+        </div>
     </div>
   </div>
 
   <div class="wap-box">
     <div class="box-head" style="justify-content:center;">Select Month</div>
-    <div style="display: flex; gap: 10px; justify-content: center; align-items: center; background: #f8fafc; padding: 15px;">
+    <div style="display: flex; gap: 5px; justify-content: center; align-items: center; background: #f8fafc; padding: 10px;">
       <input type="month" id="monthInput" onchange="handleMonthChange(this.value)" class="wap-inp" style="width:auto;">
-      <button class="wap-btn" style="background:#dc2626;" onclick="archiveAndReset()">End Month</button>
+      <button class="wap-btn" style="background:#16a34a;" onclick="exportExcel()"><i class="fas fa-file-excel"></i></button>
+      <button class="wap-btn" style="background:#dc2626;" onclick="archiveAndReset()">End</button>
     </div>
     <div id="viewStatus" style="text-align:center; padding:5px; font-size:12px; font-weight:bold; color:#16a34a; background:#f0fdf4; border-top:1px solid #e2e8f0;">
         ⚡ Live Data (Auto Sync On)
@@ -117,6 +144,14 @@
       <div class="d-item" onclick="openExpModal()"><div class="d-lbl" style="text-decoration:underline; cursor:pointer; color:#ef4444;">Total Exp.</div><div class="d-val" style="color:#ef4444" id="vExpense">0</div></div>
       <div class="d-item"><div class="d-lbl">Net Profit</div><div class="d-val" style="color:#16a34a" id="vNet">0</div></div>
     </div>
+    
+    <div style="padding:10px; background:#f8fafc; border-top:1px solid #eee;">
+        <div style="font-size:12px; font-weight:bold; color:#64748b; margin-bottom:5px; text-align:center;">Analytics</div>
+        <div style="display:flex; gap:10px;">
+            <div class="chart-container" style="flex:1;"><canvas id="statusChart"></canvas></div>
+            <div class="chart-container" style="flex:1;"><canvas id="financeChart"></canvas></div>
+        </div>
+    </div>
   </div>
 
   <div class="wap-box" style="position: sticky; top: 50px; z-index: 40; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
@@ -133,8 +168,9 @@
         </select>
     </div>
     <div class="box-content" style="display:flex; gap:8px; padding-top:0;">
-      <input id="search" class="wap-inp" placeholder="Search by Name, ID..." style="flex:1; border: 2px solid #3b5998;">
-      <button class="wap-btn" onclick="openModal()"><i class="fas fa-plus"></i> Add</button>
+      <input id="search" class="wap-inp" placeholder="Search..." style="flex:1; border: 2px solid #3b5998;" oninput="render()">
+      <button class="wap-btn" style="background:#25D366; color:#fff;" onclick="openBulkModal()"><i class="fab fa-whatsapp"></i> List</button>
+      <button class="wap-btn" onclick="openModal()"><i class="fas fa-plus"></i></button>
     </div>
   </div>
 
@@ -158,13 +194,31 @@
     <a href="#" class="f-item" onclick="openExpModal()"><i class="fas fa-receipt"></i> Exp</a>
   </div>
 
+  <div class="modal-ov" id="settingsOv">
+    <div class="modal-box">
+      <h3 style="margin-top:0; color:#3b5998;">⚙️ Settings <i class="fas fa-times" onclick="$('settingsOv').style.display='none'" style="float:right;cursor:pointer;color:#333;"></i></h3>
+      <div style="margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px;">
+        <div style="font-weight:bold; margin-bottom:5px;">Change PIN</div>
+        <div style="display:flex; gap:5px;">
+            <input id="newPin" class="wap-inp" placeholder="New PIN (e.g. 1234)">
+            <button class="wap-btn" onclick="changePin()">Save</button>
+        </div>
+      </div>
+      <div style="margin-bottom:10px;">
+        <div style="font-weight:bold; margin-bottom:5px;">Data Backup & Restore</div>
+        <button class="wap-btn" style="width:100%; margin-bottom:10px; background:#0284c7;" onclick="backupData()"><i class="fas fa-download"></i> Download Backup File</button>
+        <input type="file" id="restoreFile" style="display:none" onchange="restoreData(this)">
+        <button class="wap-btn" style="width:100%; background:#f59e0b;" onclick="$('restoreFile').click()"><i class="fas fa-upload"></i> Restore Backup File</button>
+        <small style="color:#666; display:block; margin-top:5px;">*Restoring will replace all current data.</small>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-ov" id="modalOv">
     <div class="modal-box">
       <h3 style="margin-top:0; color:#3b5998;">Client Details</h3>
       <input type="hidden" id="m_id">
       <input id="m_name" class="wap-inp" placeholder="Name" style="margin-bottom:8px;">
-      
-      <label style="font-size:12px; font-weight:bold; color:#666;">Select Area:</label>
       <select id="m_area" class="wap-sel" style="margin-bottom:8px; border-color:#3b5998;">
           <option value="">-- Select Area --</option>
           <option value="Boiddonat">Boiddonat</option>
@@ -175,7 +229,6 @@
           <option value="hobiyar dokan">hobiyar dokan</option>
           <option value="Master er mor">Master er mor</option>
       </select>
-
       <input id="m_user" class="wap-inp" placeholder="User ID" style="margin-bottom:8px;">
       <input id="m_mob" class="wap-inp" type="tel" placeholder="Mobile" style="margin-bottom:8px;">
       <div style="display:flex; gap:10px; margin-bottom:8px;">
@@ -185,10 +238,8 @@
         </select>
         <input id="m_bill" type="number" class="wap-inp" placeholder="Bill">
       </div>
-      
       <label style="font-size:12px; font-weight:bold; color:#666;">Expire Date:</label>
       <input id="m_expDate" type="date" class="wap-inp" style="margin-bottom:8px; border:2px solid #ef4444;">
-      
       <input id="m_prevDue" type="number" class="wap-inp" placeholder="Previous Due" style="margin-bottom:15px; border-color:#fca5a5;">
       <div style="display:flex; gap:10px;">
         <button class="wap-btn" style="flex:1; background:#64748b;" onclick="$('modalOv').style.display='none'">Cancel</button>
@@ -207,14 +258,76 @@
     </div>
   </div>
 
+  <div class="modal-ov" id="historyOv">
+    <div class="modal-box">
+      <h3 style="margin-top:0; color:#ea580c;">Payment History <i class="fas fa-times" onclick="$('historyOv').style.display='none'" style="float:right;cursor:pointer;color:#333;"></i></h3>
+      <div id="historyName" style="font-weight:bold; margin-bottom:10px; color:#555;"></div>
+      <div style="max-height:300px; overflow-y:auto;">
+          <table class="data-table">
+              <thead><tr><th>Month</th><th>Bill</th><th>Due</th><th>Status</th></tr></thead>
+              <tbody id="historyList"></tbody>
+          </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-ov" id="bulkOv">
+    <div class="modal-box">
+      <h3 style="margin-top:0; color:#25D366;">Due List (Send SMS) <i class="fas fa-times" onclick="$('bulkOv').style.display='none'" style="float:right;cursor:pointer;color:#333;"></i></h3>
+      <div style="font-size:12px; margin-bottom:10px; color:#666;">Click "Send" to open WhatsApp for each user.</div>
+      <div style="max-height:300px; overflow-y:auto;">
+          <table class="data-table">
+              <thead><tr><th>Name</th><th>Due</th><th>Action</th></tr></thead>
+              <tbody id="bulkList"></tbody>
+          </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="invoiceArea" style="display:none; text-align:center; padding:20px; font-family:'Segoe UI',sans-serif;">
+      <h2 style="margin:0; color:#3b5998;">WIFI MANAGER</h2>
+      <p style="margin:5px 0; font-size:12px;">Internet Service Bill</p>
+      <hr style="border:1px dashed #ccc; margin:10px 0;">
+      <div style="text-align:left; font-size:14px; line-height:1.6; margin-bottom:15px;">
+          <strong>Name:</strong> <span id="inv_name"></span><br>
+          <strong>User ID:</strong> <span id="inv_id"></span><br>
+          <strong>Mobile:</strong> <span id="inv_mob"></span><br>
+          <strong>Area:</strong> <span id="inv_area"></span><br>
+          <strong>Package:</strong> <span id="inv_pkg"></span><br>
+          <strong>Date:</strong> <span id="inv_date"></span>
+      </div>
+      <table style="width:100%; border-collapse:collapse; border:1px solid #000;">
+          <tr style="background:#eee;">
+              <th style="border:1px solid #000; padding:5px;">Description</th>
+              <th style="border:1px solid #000; padding:5px; text-align:right;">Amount</th>
+          </tr>
+          <tr>
+              <td style="border:1px solid #000; padding:5px;">Monthly Bill</td>
+              <td style="border:1px solid #000; padding:5px; text-align:right;"><span id="inv_bill"></span></td>
+          </tr>
+          <tr>
+              <td style="border:1px solid #000; padding:5px;">Previous Due</td>
+              <td style="border:1px solid #000; padding:5px; text-align:right;"><span id="inv_prev"></span></td>
+          </tr>
+          <tr style="font-weight:bold; background:#f9f9f9;">
+              <td style="border:1px solid #000; padding:5px;">Total Payable</td>
+              <td style="border:1px solid #000; padding:5px; text-align:right;"><span id="inv_total"></span></td>
+          </tr>
+      </table>
+      <div style="margin-top:30px; border-top:1px solid #000; width:120px; text-align:center; float:right;">Signature</div>
+      <div style="clear:both;"></div>
+      <div style="margin-top:20px; font-size:12px;">Thank you!</div>
+  </div>
+
 <script>
   // ================= CONFIG & INIT =================
   const DB_KEY = 'wifi_local_cache'; 
   const QUEUE_KEY = 'wifi_sync_queue';
-
-  // !!! IMPORTANT: YOUR SPECIFIC SUPABASE KEYS !!!
   const SUPABASE_URL = 'https://afybenuinfrszbudovvw.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFmeWJlbnVpbmZyc3pidWRvdnZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzNDkwMTYsImV4cCI6MjA3OTkyNTAxNn0.cxtcvmXvVMPy-hhLq2NNk5T_3K-kZJBUCaBAgG3my9g';
+  const PIN_KEY = 'wifi_pin_v1';
+  const SESSION_KEY = 'wifi_session_ts';
+  const SESSION_TIME = 5 * 60 * 1000; // 5 Minutes
 
   const $ = id => document.getElementById(id);
   const pkgRates = {"5Mbps":300, "10Mbps":400, "12Mbps":500, "20Mbps":800};
@@ -222,429 +335,183 @@
   let users = [], expenses = [], archives = [];
   let viewMode = false;
   let currentActiveMonthStr = "";
+  let stChart = null, fnChart = null;
 
   const getTodayStr = () => new Date().toISOString().split('T')[0];
 
+  // --- SMART SECURITY PIN CHECK ---
+  function checkSession() {
+      const lastLogin = localStorage.getItem(SESSION_KEY);
+      if (lastLogin && (Date.now() - lastLogin < SESSION_TIME)) {
+          $('lockScreen').style.display = 'none'; // Auto unlock if valid
+      } else {
+          $('lockScreen').style.display = 'flex'; // Show lock
+      }
+  }
+
+  function checkPin() {
+      const pin = localStorage.getItem(PIN_KEY) || "1234";
+      const inp = $('pinInput').value;
+      if(inp === pin) {
+          localStorage.setItem(SESSION_KEY, Date.now()); // Set Session
+          $('lockScreen').style.display = 'none';
+      } else {
+          alert("Wrong PIN! Try again.");
+          $('pinInput').value = '';
+      }
+  }
+
+  function openSettings() { $('settingsOv').style.display = 'flex'; }
+  function changePin() {
+      const newP = $('newPin').value;
+      if(newP && newP.length >= 4) {
+          localStorage.setItem(PIN_KEY, newP); alert("PIN Changed!"); $('newPin').value = '';
+      } else { alert("Enter at least 4 digits"); }
+  }
+
+  // --- BACKUP & RESTORE ---
+  function backupData() {
+      const data = { users, expenses, archives };
+      const blob = new Blob([JSON.stringify(data)], {type: "application/json"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = "WiFi_Backup_" + getTodayStr() + ".json"; a.click();
+  }
+  function restoreData(input) {
+      const file = input.files[0]; if(!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+          try {
+              const d = JSON.parse(e.target.result);
+              if(d.users) { users = d.users; expenses = d.expenses || []; archives = d.archives || []; saveData(); alert("Data Restored!"); location.reload(); } 
+              else { alert("Invalid File"); }
+          } catch(err) { alert("Error reading file"); }
+      }; reader.readAsText(file);
+  }
+
   async function sbFetch(path, options = {}) {
     const url = `${SUPABASE_URL}/rest/v1/${path}`;
-    const headers = {
-      apikey: SUPABASE_KEY,
-      Authorization: `Bearer ${SUPABASE_KEY}`,
-      'Content-Type': 'application/json',
-      Prefer: 'return=representation'
-    };
+    const headers = { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=representation' };
     const res = await fetch(url, { ...options, headers: { ...headers, ...(options.headers || {}) } });
     if (!res.ok) throw new Error(`${res.status}`);
     return res.status === 204 ? null : res.json();
   }
 
-  // ====== Sync Queue (Offline-first) ======
   function getQueue() { try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); } catch { return []; } }
   function setQueue(q) { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); }
   function enqueue(op) { const q = getQueue(); q.push({ ...op, ts: Date.now() }); setQueue(q); updateStatus('Pending Sync...', true); }
   
   async function flushSyncQueue() {
-    const q = getQueue();
-    if (q.length === 0) return;
-    
+    const q = getQueue(); if (q.length === 0) return;
     updateStatus(`Syncing ${q.length} items...`, true);
-    let successCount = 0;
-    const failedOps = [];
-
+    let successCount = 0; const failedOps = [];
     for (const op of q) {
       try {
-        if (op.type === 'upsertUser') {
-          await sbFetch('users', { method: 'POST', body: JSON.stringify({ ...op.data, updated_at: new Date().toISOString() }), headers: { 'Prefer': 'resolution=merge-duplicates' } });
-        } else if (op.type === 'updateUser') {
-          await sbFetch(`users?id=eq.${encodeURIComponent(op.id)}`, { method: 'PATCH', body: JSON.stringify({ ...op.data, updated_at: new Date().toISOString() }) });
-        } else if (op.type === 'upsertExpense') {
-          await sbFetch('expenses', { method: 'POST', body: JSON.stringify({ ...op.data, updated_at: new Date().toISOString() }), headers: { 'Prefer': 'resolution=merge-duplicates' } });
-        } else if (op.type === 'deleteExpense') {
-          await sbFetch(`expenses?id=eq.${encodeURIComponent(op.id)}`, { method: 'DELETE' });
-        } else if (op.type === 'upsertArchive') {
-          await sbFetch('archives', { method: 'POST', body: JSON.stringify(op.data) });
-        }
+        if (op.type === 'upsertUser') await sbFetch('users', { method: 'POST', body: JSON.stringify({ ...op.data, updated_at: new Date().toISOString() }), headers: { 'Prefer': 'resolution=merge-duplicates' } });
+        else if (op.type === 'updateUser') await sbFetch(`users?id=eq.${encodeURIComponent(op.id)}`, { method: 'PATCH', body: JSON.stringify({ ...op.data, updated_at: new Date().toISOString() }) });
+        else if (op.type === 'upsertExpense') await sbFetch('expenses', { method: 'POST', body: JSON.stringify({ ...op.data, updated_at: new Date().toISOString() }), headers: { 'Prefer': 'resolution=merge-duplicates' } });
+        else if (op.type === 'deleteExpense') await sbFetch(`expenses?id=eq.${encodeURIComponent(op.id)}`, { method: 'DELETE' });
+        else if (op.type === 'upsertArchive') await sbFetch('archives', { method: 'POST', body: JSON.stringify(op.data) });
         successCount++;
-      } catch (e) {
-        console.error("Sync Op Failed:", e);
-        failedOps.push(op); 
-      }
+      } catch (e) { failedOps.push(op); }
     }
     setQueue(failedOps);
-    if (failedOps.length === 0) updateStatus('Synced to Cloud', false);
+    if (failedOps.length === 0) updateStatus('Synced', false);
     else updateStatus(`Synced ${successCount}, Pending ${failedOps.length}`, false);
   }
 
   function init() {
+    checkSession(); // CHECK LOCK SCREEN FIRST
     const now = new Date();
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    currentActiveMonthStr = `${now.getFullYear()}-${mm}`;
+    currentActiveMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     $('monthInput').value = currentActiveMonthStr;
     $('todayDate').innerText = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-    
-    loadFromLocal();
-    render(); 
-    setTimeout(fetchData, 1500); 
+    loadFromLocal(); render(); setTimeout(fetchData, 1500); 
   }
 
   function loadFromLocal() {
       const local = localStorage.getItem(DB_KEY);
-      if(local) {
-          const d = JSON.parse(local);
-          users = d.users || []; expenses = d.expenses || []; archives = d.archives || [];
-      } else {
-          // NEW DATA LIST from uploaded CSV
-          const initialUsers = [
-            {id:"4000121",name:"Rashedul Islam",user:"maidul002",pkg:"12Mbps",mob:"01710256861",expDate:"2025-12-04"},
-            {id:"4000130",name:"SANARUL MIA",user:"anarul001",pkg:"12Mbps",mob:"01317141624",expDate:"2025-12-04"},
-            {id:"4000131",name:"Nazmulmama",user:"mithi",pkg:"12Mbps",mob:"01719024069",expDate:"2025-12-04"},
-            {id:"4000132",name:"Beauty Begum",user:"nobita",pkg:"12Mbps",mob:"01746629084",expDate:"2025-12-04"},
-            {id:"4000133",name:"Hazrat Ali",user:"hazratali1",pkg:"12Mbps",mob:"01747677330",expDate:"2025-12-04"},
-            {id:"4000135",name:"Nazmul",user:"monira",pkg:"12Mbps",mob:"01763230767",expDate:"2025-12-04"},
-            {id:"4000136",name:"Resme Begum",user:"resme",pkg:"12Mbps",mob:"01747677330",expDate:"2025-12-04"},
-            {id:"4000137",name:"Jabel Mia",user:"jabel",pkg:"12Mbps",mob:"01898593554",expDate:"2025-12-04"},
-            {id:"4000138",name:"Abdur Rahim",user:"abdurrahim",pkg:"12Mbps",mob:"01311696081",expDate:"2025-08-04"},
-            {id:"4000139",name:"Hosen",user:"hosen",pkg:"12Mbps",mob:"01314930688",expDate:"2025-11-04"},
-            {id:"4000141",name:"Arju Sir",user:"arjusir",pkg:"12Mbps",mob:"01747834908",expDate:"2025-12-04"},
-            {id:"4000190",name:"Joynal",user:"joynal67",pkg:"12Mbps",mob:"01799548454",expDate:"2025-12-04"},
-            {id:"4000207",name:"munni1",user:"munni1",pkg:"12Mbps",mob:"01798868454",expDate:"2025-12-04"},
-            {id:"4000230",name:"LAKU HOME",user:"lakuhome",pkg:"12Mbps",mob:"01776956550",expDate:"2025-12-04"},
-            {id:"4000259",name:"abulhossain",user:"abulhossain1",pkg:"12Mbps",mob:"01678964321",expDate:"2025-12-04"},
-            {id:"4000272",name:"Shakib",user:"shakib01",pkg:"12Mbps",mob:"01307028779",expDate:"2025-12-04"},
-            {id:"4000273",name:"Adnan home",user:"adnanhome",pkg:"12Mbps",mob:"01317141660",expDate:"2025-12-04"},
-            {id:"4000274",name:"shefayet",user:"shefayet",pkg:"12Mbps",mob:"01822444315",expDate:"2025-12-04"},
-            {id:"4000275",name:"Mamun",user:"mamun590",pkg:"12Mbps",mob:"01877740590",expDate:"2025-12-04"},
-            {id:"4000277",name:"Roni Vagina",user:"roni",pkg:"12Mbps",mob:"01617386582",expDate:"2025-12-04"},
-            {id:"4000281",name:"ABDUR RAZZAK",user:"razzak",pkg:"12Mbps",mob:"01606355906",expDate:"2025-12-04"},
-            {id:"4000282",name:"Rashedul Mia",user:"rashedul1",pkg:"12Mbps",mob:"01774789693",expDate:"2025-12-04"},
-            {id:"4000122",name:"Yahya uncle",user:"yahya",pkg:"12Mbps",mob:"01958613614",expDate:"2025-12-04"},
-            {id:"4000144",name:"limon",user:"limon41",pkg:"12Mbps",mob:"0188578695",expDate:"2025-12-04"},
-            {id:"4000154",name:"forhad",user:"forhad",pkg:"12Mbps",mob:"01731951455",expDate:"2025-12-04"},
-            {id:"4000163",name:"Samiul Baiddonath",user:"samiul2",pkg:"12Mbps",mob:"01334046707",expDate:"2025-12-04"},
-            {id:"4000164",name:"Moklesur",user:"moklesur1",pkg:"12Mbps",mob:"01734698647",expDate:"2025-12-04"},
-            {id:"4000167",name:"jahurul",user:"jahurul",pkg:"12Mbps",mob:"017795244855",expDate:"2025-12-04"},
-            {id:"4000168",name:"Jasim",user:"jasim5",pkg:"12Mbps",mob:"01602654185",expDate:"2025-12-04"},
-            {id:"4000172",name:"harun1",user:"harun1",pkg:"12Mbps",mob:"01840784546",expDate:"2025-12-04"},
-            {id:"4000174",name:"layon2",user:"layon2",pkg:"12Mbps",mob:"01770656921",expDate:"2025-12-04"},
-            {id:"4000176",name:"nurislam01",user:"nurislam1",pkg:"12Mbps",mob:"01798568454",expDate:"2025-12-04"},
-            {id:"4000178",name:"champa",user:"champa",pkg:"12Mbps",mob:"01798868454",expDate:"2025-12-04"},
-            {id:"4000179",name:"totamil",user:"totamil",pkg:"12Mbps",mob:"01701645779",expDate:"2025-12-04"},
-            {id:"4000180",name:"Shipon",user:"shipon",pkg:"12Mbps",mob:"01798865464",expDate:"2025-12-04"},
-            {id:"4000181",name:"Sajedul Islam",user:"sajedul515",pkg:"12Mbps",mob:"01919576113",expDate:"2025-12-04"},
-            {id:"4000182",name:"ASHRAFUL",user:"ashraful",pkg:"12Mbps",mob:"01744775182",expDate:"2025-12-04"},
-            {id:"4000184",name:"MALEK VAI",user:"malekvai",pkg:"12Mbps",mob:"01750783816",expDate:"2025-12-04"},
-            {id:"4000187",name:"hazimass",user:"hazimass",pkg:"12Mbps",mob:"01345868454",expDate:"2025-12-04"},
-            {id:"4000188",name:"Mojid member",user:"tajul1",pkg:"12Mbps",mob:"01326006911",expDate:"2025-12-04"},
-            {id:"4000189",name:"Layon",user:"layon",pkg:"12Mbps",mob:"01770656921",expDate:"2025-12-04"},
-            {id:"4000191",name:"Rita",user:"ritatrading",pkg:"12Mbps",mob:"01798876454",expDate:"2025-12-04"},
-            {id:"4000192",name:"akkas",user:"akkas1",pkg:"12Mbps",mob:"01733074088",expDate:"2025-11-04"},
-            {id:"4000197",name:"RIYAD",user:"riyad01",pkg:"12Mbps",mob:"01719707650",expDate:"2025-12-04"},
-            {id:"4000198",name:"Aminul",user:"aminul",pkg:"12Mbps",mob:"01798814370",expDate:"2025-12-04"},
-            {id:"4000199",name:"Tajrul",user:"tajrul",pkg:"12Mbps",mob:"01889081172",expDate:"2025-12-04"},
-            {id:"4000200",name:"kd firoz",user:"kdfiroz",pkg:"12Mbps",mob:"01773185003",expDate:"2025-12-04"},
-            {id:"4000201",name:"MADRASHA",user:"madrasha",pkg:"12Mbps",mob:"01739895652",expDate:"2025-12-04"},
-            {id:"4000202",name:"Samiul Sami",user:"samiul07",pkg:"12Mbps",mob:"01776607502",expDate:"2025-12-04"},
-            {id:"4000208",name:"shadhin01",user:"shadhin01",pkg:"12Mbps",mob:"01701645779",expDate:"2025-12-04"},
-            {id:"4000209",name:"jihad01",user:"jihad01",pkg:"12Mbps",mob:"01798865464",expDate:"2025-11-04"},
-            {id:"4000210",name:"Rasel",user:"raselkaku",pkg:"12Mbps",mob:"01799548454",expDate:"2025-12-04"},
-            {id:"4000216",name:"Mostofa",user:"mostofa001",pkg:"12Mbps",mob:"01345868454",expDate:"2025-12-04"},
-            {id:"4000217",name:"jamiul",user:"jamiul",pkg:"12Mbps",mob:"01798868454",expDate:"2025-12-04"},
-            {id:"4000219",name:"Arif",user:"arif01",pkg:"12Mbps",mob:"01719825362",expDate:"2025-12-04"},
-            {id:"4000226",name:"maruf baiddonath",user:"maruf01",pkg:"12Mbps",mob:"01605873904",expDate:"2025-12-04"},
-            {id:"4000227",name:"office0001",user:"office0001",pkg:"20Mbps",mob:"01798568454",expDate:"2025-04-04"},
-            {id:"4000228",name:"nazmul01",user:"nazmul01",pkg:"12Mbps",mob:"01779309423",expDate:"2025-12-04"},
-            {id:"4000229",name:"rasel",user:"rasel92",pkg:"12Mbps",mob:"01771306192",expDate:"2025-12-04"},
-            {id:"4000231",name:"APCL FREE WIFI",user:"freewifi",pkg:"12Mbps",mob:"01776956550",expDate:"2025-04-04"},
-            {id:"4000234",name:"osmangone",user:"osmangone",pkg:"12Mbps",mob:"01777777770",expDate:"2025-12-04"},
-            {id:"4000236",name:"monjurul",user:"monjurul",pkg:"12Mbps",mob:"01766554433",expDate:"2025-11-04"},
-            {id:"4000237",name:"jahid",user:"jahid02",pkg:"12Mbps",mob:"01317141660",expDate:"2025-12-04"},
-            {id:"4000238",name:"FARUK VAI",user:"faruk431",pkg:"12Mbps",mob:"01740298431",expDate:"2025-12-04"},
-            {id:"4000240",name:"Shibram College",user:"shibramcollege",pkg:"12Mbps",mob:"01309121764",expDate:"2025-12-04"},
-            {id:"4000241",name:"Taher",user:"taher",pkg:"12Mbps",mob:"01300935156",expDate:"2025-12-04"},
-            {id:"4000243",name:"Shakil",user:"shakil75",pkg:"12Mbps",mob:"01734701828",expDate:"2025-12-04"},
-            {id:"4000261",name:"faruk",user:"farukmia",pkg:"12Mbps",mob:"01783012175",expDate:"2025-12-04"},
-            {id:"4000262",name:"Sujan baiddonath",user:"sujon1",pkg:"12Mbps",mob:"01920331190",expDate:"2025-12-04"},
-            {id:"4000263",name:"ASHRAFUL",user:"apon",pkg:"12Mbps",mob:"01301366273",expDate:"2025-12-04"},
-            {id:"4000265",name:"Maruf Vaiya",user:"maruf",pkg:"12Mbps",mob:"01774992920",expDate:"2025-12-04"},
-            {id:"4000266",name:"SALMAN",user:"salman1",pkg:"12Mbps",mob:"01614510029",expDate:"2025-11-04"},
-            {id:"4000267",name:"Ebramhim",user:"ebrahim",pkg:"12Mbps",mob:"01853756807",expDate:"2025-12-04"},
-            {id:"4000268",name:"JHORU",user:"jahurul2",pkg:"12Mbps",mob:"01324048811",expDate:"2025-12-04"},
-            {id:"4000269",name:"Laku",user:"nahid44",pkg:"12Mbps",mob:"01797838732",expDate:"2025-12-04"},
-            {id:"4000270",name:"Zia",user:"ziavai",pkg:"12Mbps",mob:"01730434641",expDate:"2025-12-04"},
-            {id:"4000271",name:"Rejaul",user:"rejaulsir",pkg:"12Mbps",mob:"01722535514",expDate:"2025-11-04"},
-            {id:"4000276",name:"Mukul mia",user:"mukulmia1",pkg:"12Mbps",mob:"01303590729",expDate:"2025-12-04"},
-            {id:"4000278",name:"LEBU",user:"lebu",pkg:"12Mbps",mob:"01717213686",expDate:"2025-12-04"},
-            {id:"4000279",name:"MAMUN BAIDDONATH",user:"mamun325",pkg:"12Mbps",mob:"01611521325",expDate:"2025-12-04"},
-            {id:"4000280",name:"Alomgir belertol",user:"smalomgir",pkg:"12Mbps",mob:"01867761406",expDate:"2025-12-04"},
-            {id:"4000283",name:"Siju Store",user:"sijuStore",pkg:"12Mbps",mob:"01706016765",expDate:"2025-12-04"}
-          ]; 
-          // Re-initialize with new fields
-          if(!localStorage.getItem('first_run_done_v2')) {
-             users = initialUsers.map(u => ({
-                 ...u,
-                 conn: 'Active', 
-                 pay: 'Unpaid', 
-                 due: 0, 
-                 prevDue: 0, 
-                 bill: pkgRates[u.pkg] || 500, 
-                 area: '',
-                 expDate: u.expDate || ''
-             }));
-             localStorage.setItem('first_run_done_v2', 'true');
-             saveData(true);
-          }
-      }
+      if(local) { const d = JSON.parse(local); users = d.users || []; expenses = d.expenses || []; archives = d.archives || []; } 
+      else if(!localStorage.getItem('first_run_done_v2')) localStorage.setItem('first_run_done_v2', 'true');
   }
 
-  // Fetch logic: Merge remote data with local to prevent loss
   async function fetchData() {
-    const q = getQueue();
-    if (q.length > 0) {
-      await flushSyncQueue();
-      if (getQueue().length > 0) {
-        updateStatus('Offline (Local Data Kept)', false);
-        return; 
-      }
-    }
-
+    if (getQueue().length > 0) { await flushSyncQueue(); if (getQueue().length > 0) { updateStatus('Offline (Queue Active)', false); return; } }
     updateStatus('Syncing...', true);
     try {
-      const [remoteUsers, remoteExpenses, remoteArchives] = await Promise.all([
-        sbFetch('users?select=*'),
-        sbFetch('expenses?select=*'),
-        sbFetch('archives?select=*')
-      ]);
-      
-      // MERGE LOGIC: Keep local static list, update status from server
+      const [remoteUsers, remoteExpenses, remoteArchives] = await Promise.all([ sbFetch('users?select=*'), sbFetch('expenses?select=*'), sbFetch('archives?select=*') ]);
       if (remoteUsers) {
-        // If server is empty but local has data (First Time Setup), Push local to server
-        if(remoteUsers.length === 0 && users.length > 0) {
-             updateStatus('Initializing Cloud DB...', true);
-             // We won't push automatically here to avoid spam, but users will push on edit
-        }
-        else {
              const rMap = new Map(remoteUsers.map(r => [String(r.id), r]));
-             
-             // 1. Update existing local users from Remote
-             users = users.map(u => {
-                const r = rMap.get(u.id);
-                if(!r) return u; // Keep local version if not on server
-                return {
-                   ...u,
-                   // Update status fields
-                   conn: r.conn, pay: r.pay, due: r.due, prevDue: r.prev_due, 
-                   expDate: r.exp_date || u.expDate, // Use remote date if present
-                   bill: r.bill, area: r.area || u.area // Sync Area
-                };
-             });
-
-             // 2. Add new users from Remote that are missing locally
-             remoteUsers.forEach(r => {
-                if(!users.find(u => u.id == r.id)) {
-                    users.push({
-                        id: String(r.id), name: r.name, user: r.user_id, 
-                        pkg: r.pkg, mob: r.mob, bill: Number(r.bill),
-                        conn: r.conn, pay: r.pay, due: Number(r.due), 
-                        prevDue: Number(r.prev_due), expDate: r.exp_date, area: r.area
-                    });
-                }
-             });
-        }
+             users = users.map(u => { const r = rMap.get(u.id); return r ? { ...u, conn: r.conn, pay: r.pay, due: r.due, prevDue: r.prev_due, expDate: r.exp_date || u.expDate, bill: r.bill, area: r.area || u.area } : u; });
+             remoteUsers.forEach(r => { if(!users.find(u => u.id == r.id)) users.push({ id: String(r.id), name: r.name, user: r.user_id, pkg: r.pkg, mob: r.mob, bill: Number(r.bill), conn: r.conn, pay: r.pay, due: Number(r.due), prevDue: Number(r.prev_due), expDate: r.exp_date, area: r.area }); });
       }
-
-      if (remoteExpenses && remoteExpenses.length > 0) {
-        expenses = remoteExpenses.map(r => ({
-          id: String(r.id),
-          desc: r.desc,
-          amnt: Number(r.amnt) || 0,
-          date: r.date || null
-        }));
-      }
-
-      if (remoteArchives && remoteArchives.length > 0) {
-        archives = remoteArchives.map(r => ({
-          id: String(r.id),
-          name: r.name,
-          data: r.data
-        }));
-      }
-
+      if (remoteExpenses) expenses = remoteExpenses.map(r => ({ id: String(r.id), desc: r.desc, amnt: Number(r.amnt) || 0, date: r.date || null }));
+      if (remoteArchives) archives = remoteArchives.map(r => ({ id: String(r.id), name: r.name, data: r.data }));
       localStorage.setItem(DB_KEY, JSON.stringify({ users, expenses, archives }));
-      render();
-      updateStatus('Online & Synced', false);
-
-    } catch (e) {
-      console.log("Fetch Error", e);
-      // Don't show offline if keys are missing, it's confusing
-      if(e.message !== "Missing Keys") {
-          updateStatus('Offline Mode', false);
-      } else {
-          updateStatus('Setup Required', false);
-      }
-    }
+      render(); updateStatus('Online', false);
+    } catch (e) { updateStatus('Offline Mode', false); }
   }
 
   function saveData(silent = false) {
-    const payload = { users, expenses, archives };
-    localStorage.setItem(DB_KEY, JSON.stringify(payload));
+    localStorage.setItem(DB_KEY, JSON.stringify({ users, expenses, archives }));
     if(!silent) render();
-    if(navigator.onLine && getQueue().length > 0) {
-        flushSyncQueue();
-    }
+    if(navigator.onLine) flushSyncQueue();
   }
 
   function updateStatus(msg, spin) {
-      const el = $('syncStatus');
-      el.style.display = 'inline-block';
+      const el = $('syncStatus'); el.style.display = 'inline-block';
       el.innerHTML = spin ? `<i class="fas fa-circle-notch fa-spin"></i> ${msg}` : `<i class="fas fa-check"></i> ${msg}`;
-      if(msg.includes('Offline') || msg.includes('Pending')) el.style.background = '#dc2626';
-      else if(msg.includes('Setup')) el.style.background = '#f59e0b';
-      else el.style.background = 'rgba(255,255,255,0.2)';
+      el.style.background = (msg.includes('Offline') || msg.includes('Pending')) ? '#dc2626' : 'rgba(255,255,255,0.2)';
   }
 
-  // Force Save now fetches data too
-  async function forceSave() { 
-      updateStatus('Saving...', true);
-      saveData(true); 
-      await flushSyncQueue(); 
-      await fetchData(); // Pull latest changes
-  }
+  async function forceSave() { updateStatus('Saving...', true); saveData(true); await flushSyncQueue(); await fetchData(); }
 
-  function hardReset() {
-      if(confirm("Are you sure? This deletes local data and loads the NEW list from code.")) {
-          localStorage.removeItem(DB_KEY);
-          localStorage.removeItem('first_run_done_v2'); // Force reload of new list
-          location.reload();
-      }
-  }
-
+  // --- CORE LOGIC ---
   function updPay(id, v) { 
-      if(viewMode) return; 
-      const u = users.find(x=>x.id==id); 
-      u.pay = v; 
-      if(v === 'Paid') {
-          u.conn = 'Active';
-          u.payDate = getTodayStr();
-          
-          // --- LOGIC FOR NEXT MONTH 4th ---
-          const d = new Date();
-          // Add 1 month to current date
-          d.setMonth(d.getMonth() + 1);
-          // Set to the 4th
-          d.setDate(4);
-          u.expDate = d.toISOString().split('T')[0];
-          // --------------------------------
-
-      } else {
-          u.payDate = null;
-          if(u.conn === 'Free') u.conn = 'Free';
-          else u.conn = 'Active';
-      }
-      enqueue({ type: 'updateUser', id, data: { pay: u.pay, conn: u.conn, pay_date: u.payDate, exp_date: u.expDate } });
-      saveData(); 
+      if(viewMode) return; const u = users.find(x=>x.id==id); u.pay = v; 
+      if(v === 'Paid') { u.conn = 'Active'; u.payDate = getTodayStr(); const d = new Date(); d.setMonth(d.getMonth() + 1); d.setDate(4); u.expDate = d.toISOString().split('T')[0]; } 
+      else { u.payDate = null; u.conn = u.conn === 'Free' ? 'Free' : 'Active'; }
+      enqueue({ type: 'updateUser', id, data: { pay: u.pay, conn: u.conn, pay_date: u.payDate, exp_date: u.expDate } }); saveData(); 
   }
+  function updConn(id, v) { if(viewMode) return; const u = users.find(x=>x.id==id); u.conn = v; enqueue({ type: 'updateUser', id, data: { conn: v } }); saveData(); }
+  function updDue(id, v) { if(viewMode) return; const u = users.find(x=>x.id==id); u.due = Number(v); enqueue({ type: 'updateUser', id, data: { due: u.due } }); saveData(); }
 
-  function updConn(id, v) { 
-      if(viewMode) return; 
-      const u = users.find(x=>x.id==id);
-      u.conn = v; 
-      enqueue({ type: 'updateUser', id, data: { conn: v } });
-      saveData(); 
-  }
-  
-  function updDue(id, v) { 
-      if(viewMode) return; 
-      const u = users.find(x=>x.id==id);
-      u.due = Number(v); 
-      enqueue({ type: 'updateUser', id, data: { due: u.due } });
-      saveData(); 
-  }
-
-  // ================= RENDER LOGIC =================
   function render() {
-    const list = $('list');
-    const term = ($('search').value || '').toLowerCase();
-    const filterArea = $('filterArea').value;
+    const list = $('list'); const term = ($('search').value || '').toLowerCase(); const filterArea = $('filterArea').value;
     list.innerHTML = '';
     
     let st = {act:0, paid:0, unpaid:0, exp:0, free:0, coll:0, totalDue:0, prevDueTotal:0};
-    let tColl=0, tExp=0; 
+    let tColl=0, tExp=0; const todayStr = getTodayStr();
     
-    const todayStr = getTodayStr();
-
-    // Sorting: Unpaid > Due > Expired > Others
-    const getWeight = u => {
-        if(u.conn === 'Active' && u.pay === 'Unpaid') return 4;
-        if(u.due > 0) return 3;
-        if(u.prevDue > 0) return 2;
-        if(u.conn === 'Expired') return 1;
-        return 0; 
-    };
-
     const sorted = [...users].sort((a,b) => {
-        const wA = getWeight(a);
-        const wB = getWeight(b);
-        if(wA !== wB) return wB - wA; 
-        return a.name.localeCompare(b.name);
+        const w = u => (u.conn==='Active'&&u.pay==='Unpaid')?4 : (u.due>0)?3 : (u.prevDue>0)?2 : (u.conn==='Expired')?1 : 0;
+        return (w(b) - w(a)) || a.name.localeCompare(b.name);
     });
 
     sorted.forEach(u => {
-      // Area Filter Logic
       if(filterArea !== 'all' && u.area !== filterArea) return;
-
-      const bill = Number(u.bill) || 0;
-      const due = Number(u.due) || 0;
-      const prev = Number(u.prevDue) || 0;
-
+      const bill = Number(u.bill)||0, due = Number(u.due)||0, prev = Number(u.prevDue)||0;
       let collected = 0;
 
       if(u.conn === 'Free') { st.free++; st.act++; } 
       else if(u.conn === 'Expired') { st.exp++; st.prevDueTotal += prev; } 
       else {
-          st.act++;
-          st.totalDue += due;
-          st.prevDueTotal += prev;
+          st.act++; st.totalDue += due; st.prevDueTotal += prev;
           if(u.pay === 'Paid') st.paid++; else st.unpaid++;
-
-          if(due > 0) collected = bill - due;
-          else if(u.pay === 'Paid') collected = bill;
-          else collected = 0;
-          
-          if(collected < 0) collected = 0;
-          st.coll += collected;
-          if(u.payDate === todayStr) tColl += collected;
+          if(due > 0) collected = bill - due; else if(u.pay === 'Paid') collected = bill;
+          st.coll += collected; if(u.payDate === todayStr) tColl += collected;
       }
 
-      // Search
       const searchText = (u.name + u.mob + u.user + u.id + (u.area||'')).toLowerCase();
       if(!searchText.includes(term)) return;
-
       if(currentFilter === 'paid' && (u.conn !== 'Active' || u.pay !== 'Paid')) return;
       if(currentFilter === 'unpaid' && (u.conn !== 'Active' || u.pay !== 'Unpaid')) return;
       if(currentFilter === 'due' && u.due <= 0 && u.prevDue <= 0) return;
 
       let cardClass = 'client-card', badge = '';
-      
-      if(u.conn === 'Free') { 
-          cardClass += ' card-free'; 
-          badge = '<span style="background:#ccfbf1; color:#0f766e; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:bold;">Free</span>'; 
-      }
-      else if(u.conn === 'Expired') { 
-          cardClass += ' card-exp'; 
-          badge = '<span style="background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:bold;">Expired</span>'; 
-      }
-      else if(u.pay === 'Paid') { 
-          cardClass += ' card-paid'; 
-          if(due > 0) {
-             badge = '<span style="background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:bold;">Partial Paid</span>'; 
-          } else {
-             badge = '<span style="background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:bold;">Paid Full</span>'; 
-          }
-      }
-      else { 
-          cardClass += ' card-due'; 
-          badge = '<span style="background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:bold;">Due Bill</span>'; 
-      }
+      if(u.conn === 'Free') { cardClass += ' card-free'; badge = '<span style="background:#ccfbf1; color:#0f766e; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:bold;">Free</span>'; }
+      else if(u.conn === 'Expired') { cardClass += ' card-exp'; badge = '<span style="background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:bold;">Expired</span>'; }
+      else if(u.pay === 'Paid') { cardClass += ' card-paid'; badge = due > 0 ? '<span style="background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:bold;">Partial Paid</span>' : '<span style="background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:bold;">Paid Full</span>'; }
+      else { cardClass += ' card-due'; badge = '<span style="background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:bold;">Due Bill</span>'; }
 
       const controls = viewMode ? '' : `
         <div style="background:#f8fafc; padding:8px; border-radius:6px; display:flex; gap:5px; margin-bottom:10px; align-items:center;">
@@ -663,156 +530,111 @@
         </div>`;
 
       const prevDueHtml = u.prevDue > 0 ? `<div class="prev-due-box">⚠️ আগের বাকি: ${u.prevDue}৳</div>` : '';
-      const nameExtra = u.prevDue > 0 ? '<span style="color:#dc2626; font-size:11px; margin-left:5px; background:#fef2f2; padding:2px 5px; border-radius:4px;">(গত মাসের বাকি আছে)</span>' : '';
-      const areaBadge = u.area ? `<span style="font-size:11px; color:#3b5998; background:#e0f2fe; padding:2px 5px; border-radius:4px; margin-left:5px;"><i class="fas fa-map-marker-alt"></i> ${u.area}</span>` : '';
-      
-      // Expire Date Display
+      const areaBadge = u.area ? `<span style="font-size:11px; color:#3b5998; background:#e0f2fe; padding:2px 5px; border-radius:4px; margin-left:5px;">${u.area}</span>` : '';
       const expDateHtml = u.expDate ? `<div style="color:#666; font-size:12px; margin-top:5px; padding-top:2px; border-top:1px dashed #ddd;"><i class="fas fa-calendar-alt" style="color:#ef4444;"></i> Exp: <b>${u.expDate}</b></div>` : '';
 
-      const html = `
+      list.insertAdjacentHTML('beforeend', `
       <div class="${cardClass}">
         <div class="card-header">
-            <div><div class="c-name">${u.name} ${nameExtra}</div><small style="color:#666">${u.user} | ID: ${u.id}</small></div>
+            <div><div class="c-name">${u.name} ${u.prevDue>0?'<span style="color:red;font-size:11px;">(বাকি)</span>':''}</div><small style="color:#666">${u.user} ${areaBadge}</small></div>
             ${badge}
         </div>
         <div class="card-body">
-            <div><i class="fas fa-box"></i> ${u.pkg}</div>
-            <div><i class="fas fa-phone"></i> ${u.mob}</div>
-            <div style="grid-column: span 2;">${areaBadge}</div>
-            <div><i class="fas fa-file-invoice"></i> Bill: ${u.bill}৳</div>
-            <div><i class="fas fa-coins"></i> Due: <b style="color:${u.due>0?'red':'green'}">${u.due}৳</b></div>
+            <div><i class="fas fa-box"></i> ${u.pkg}</div><div><i class="fas fa-phone"></i> ${u.mob}</div>
+            <div style="grid-column: span 2;"><i class="fas fa-file-invoice"></i> Bill: ${u.bill}৳ | Due: <b style="color:${u.due>0?'red':'green'}">${u.due}৳</b></div>
             <div style="grid-column: span 2;">${expDateHtml}</div>
             ${prevDueHtml}
         </div>
         ${controls}
         <div class="card-actions">
-            <button class="btn-icon btn-call" onclick="window.location.href='tel:${u.mob}'"><i class="fas fa-phone"></i> Call</button>
-            <button class="btn-icon btn-wa" onclick="wa('${u.mob}', '${u.pay}', ${u.due}, ${u.prevDue})"><i class="fab fa-whatsapp"></i> App</button>
-            <button class="btn-icon btn-edit" onclick="edit('${u.id}')"><i class="fas fa-edit"></i> Edit</button>
+            <button class="btn-icon btn-call" onclick="window.location.href='tel:${u.mob}'"><i class="fas fa-phone"></i></button>
+            <button class="btn-icon btn-wa" onclick="wa('${u.mob}', '${u.pay}', ${u.due}, ${u.prevDue})"><i class="fab fa-whatsapp"></i></button>
+            <button class="btn-icon btn-bill" onclick="printInvoice('${u.id}')"><i class="fas fa-print"></i></button>
+            <button class="btn-icon btn-hist" onclick="openHistory('${u.id}')"><i class="fas fa-history"></i></button>
+            <button class="btn-icon btn-edit" onclick="edit('${u.id}')"><i class="fas fa-edit"></i></button>
         </div>
-      </div>`;
-      
-      list.insertAdjacentHTML('beforeend', html);
+      </div>`);
     });
 
     const expenseTotal = expenses.reduce((a,b)=>a+(Number(b.amnt)||0),0);
-    const todayStr2 = getTodayStr();
-    tExp = expenses.filter(e => e.date && e.date === todayStr2).reduce((a,b)=>a+(Number(b.amnt)||0),0);
+    tExp = expenses.filter(e => e.date && e.date === getTodayStr()).reduce((a,b)=>a+(Number(b.amnt)||0),0);
 
     $('vAct').innerText = st.act; $('vPaid').innerText = st.paid; $('vUnpaid').innerText = st.unpaid; 
     $('vExp').innerText = st.exp; $('vCurrDue').innerText = st.totalDue + '৳'; 
     $('vPrevDueTotal').innerText = st.prevDueTotal + '৳'; $('vColl').innerText = st.coll + '৳';
     $('vExpense').innerText = expenseTotal + '৳'; $('vNet').innerText = (st.coll - expenseTotal) + '৳';
-    
     $('tColl').innerText = tColl; $('tExp').innerText = tExp; $('tNet').innerText = (tColl - tExp);
+
+    renderCharts(st.paid, st.unpaid, st.free, st.coll, expenseTotal);
+  }
+
+  function openHistory(id) {
+      const u = users.find(x => x.id == id);
+      $('historyName').innerText = u.name + " (" + u.user + ")";
+      const tbody = $('historyList'); tbody.innerHTML = '';
+      let rows = `<tr><td>Current</td><td>${u.bill}</td><td style="color:${u.due>0?'red':'green'}">${u.due}</td><td>${u.conn}</td></tr>`;
+      archives.slice().reverse().forEach(arc => {
+          const oldU = arc.data.users.find(x => x.id == id);
+          if (oldU) {
+              const paySt = oldU.due > 0 ? 'Due' : (oldU.pay === 'Paid' ? 'Paid' : 'Unpaid');
+              rows += `<tr><td>${arc.name}</td><td>${oldU.bill}</td><td style="color:${oldU.due>0?'red':'green'}">${oldU.due}</td><td>${paySt}</td></tr>`;
+          }
+      });
+      tbody.innerHTML = rows;
+      $('historyOv').style.display = 'flex';
+  }
+
+  function exportExcel() {
+      const data = users.map(u => ({ Name: u.name, UserID: u.user, Mobile: u.mob, Area: u.area, Package: u.pkg, Bill: u.bill, Paid: (u.pay==='Paid'?'Yes':'No'), Due: u.due, PrevDue: u.prevDue, TotalDue: (Number(u.due)+Number(u.prevDue)) }));
+      const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "WiFi Clients"); XLSX.writeFile(wb, "WiFi_Manager_Report.xlsx");
+  }
+
+  function openBulkModal() {
+      const tbody = $('bulkList'); tbody.innerHTML = '';
+      const dues = users.filter(u => (u.due > 0 || u.prevDue > 0) && u.conn !== 'Free');
+      if(dues.length === 0) tbody.innerHTML = '<tr><td colspan="3">No Dues Found</td></tr>';
+      dues.forEach(u => {
+          const total = Number(u.due) + Number(u.prevDue);
+          let n = u.mob.replace(/\D/g,''); if(n.length<=11) n='88'+n;
+          const msg = `প্রিয় গ্রাহক ${u.name}, আপনার ইন্টারনেট বিল বাবদ মোট ${total} টাকা বকেয়া আছে। অনুগ্রহ করে পরিশোধ করুন। ধন্যবাদ।`;
+          const link = `https://wa.me/${n}?text=${encodeURIComponent(msg)}`;
+          tbody.innerHTML += `<tr><td>${u.name}<br><small>${u.user}</small></td><td style="color:red; font-weight:bold;">${total}</td><td><a href="${link}" target="_blank" style="text-decoration:none; background:#25D366; color:white; padding:4px 8px; border-radius:4px; font-size:11px;">Send</a></td></tr>`;
+      });
+      $('bulkOv').style.display = 'flex';
+  }
+
+  function renderCharts(paid, unpaid, free, coll, exp) {
+    if (stChart) stChart.destroy(); if (fnChart) fnChart.destroy();
+    stChart = new Chart($('statusChart'), { type: 'doughnut', data: { labels: ['Paid', 'Unpaid', 'Free'], datasets: [{ data: [paid, unpaid, free], backgroundColor: ['#16a34a', '#f59e0b', '#06b6d4'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+    fnChart = new Chart($('financeChart'), { type: 'bar', data: { labels: ['Income', 'Expense'], datasets: [{ label: 'Amount', data: [coll, exp], backgroundColor: ['#3b5998', '#ef4444'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
   }
 
   function wa(mob, pay, due, prev) { 
       let n=mob.replace(/\D/g,''); if(n.length<=11) n='88'+n; 
-      let msg = "";
-      if(prev > 0) msg += `আপনার গত মাসের বাকি: ${prev} টাকা। `;
-      if(due > 0) msg += `এই মাসের বিল বাকি: ${due} টাকা। `;
-      if(msg === "") msg = (pay==='Unpaid'?`অনুগ্রহ করে আপনার বিল পরিশোধ করুন।`:`ধন্যবাদ!`);
-      else msg += ` মোট পরিশোধ করুন: ${Number(due)+Number(prev)} টাকা।`;
+      let msg = ""; if(prev > 0) msg += `গত মাসের বকেয়া: ${prev} টাকা। `; if(due > 0) msg += `এই মাসের বিল: ${due} টাকা। `;
+      if(msg === "") msg = (pay==='Unpaid'?`বিল পরিশোধ করুন।`:`ধন্যবাদ!`); else msg += ` মোট পরিশোধ করুন: ${Number(due)+Number(prev)} টাকা।`;
       window.open(`https://wa.me/${n}?text=${encodeURIComponent(msg)}`); 
   }
-
+  function printInvoice(id) {
+    const u = users.find(x => x.id == id); if(!u) return;
+    $('inv_name').innerText = u.name; $('inv_id').innerText = u.user||'N/A'; $('inv_mob').innerText = u.mob; $('inv_area').innerText = u.area||'N/A';
+    $('inv_pkg').innerText = u.pkg; $('inv_date').innerText = getTodayStr(); $('inv_bill').innerText = u.bill + ' Tk'; $('inv_prev').innerText = u.prevDue + ' Tk';
+    $('inv_total').innerText = (Number(u.bill)+Number(u.prevDue)) + ' Tk';
+    window.print();
+  }
   function setFilter(type) { if(currentFilter===type && type!=='all') currentFilter='all'; else currentFilter=type; document.querySelectorAll('.f-item').forEach(b=>b.classList.remove('active')); const m={paid:1,unpaid:2,due:3}; if(m[type]) document.querySelectorAll('.f-item')[m[type]].classList.add('active'); else document.querySelectorAll('.f-item')[0].classList.add('active'); render(); }
   function openExpModal() { if(viewMode)return; $('ex_reason').value=''; $('ex_amount').value=''; renderExpList(); $('expOv').style.display='flex'; }
-  function saveExpense() { 
-      const r=$('ex_reason').value, a=Number($('ex_amount').value); 
-      if(!r||!a) return alert("Enter details"); 
-      const today = getTodayStr();
-      const id = Date.now().toString();
-      expenses.push({id, desc:r, amnt:a, date:today}); 
-      enqueue({ type: 'upsertExpense', data: { id, desc:r, amnt:a, date:today } });
-      saveData(); 
-      $('ex_reason').value=''; $('ex_amount').value=''; renderExpList(); 
-  }
+  function saveExpense() { const r=$('ex_reason').value, a=Number($('ex_amount').value); if(!r||!a) return alert("Enter details"); const d = getTodayStr(), id = Date.now().toString(); expenses.push({id, desc:r, amnt:a, date:d}); enqueue({ type: 'upsertExpense', data: { id, desc:r, amnt:a, date:d } }); saveData(); $('ex_reason').value=''; $('ex_amount').value=''; renderExpList(); }
   function renderExpList() { const l=$('expList'); l.innerHTML=''; [...expenses].reverse().forEach((e,i)=>{ l.innerHTML+=`<div style="border-bottom:1px solid #eee; padding:5px;"><b>${e.desc}</b>: ${e.amnt}tk <small>${e.date}</small> <i class="fas fa-trash" style="color:red;float:right;cursor:pointer;" onclick="delExp(${expenses.length-1-i})"></i></div>`; }); }
   function delExp(i) { if(!viewMode && confirm('Delete?')) { const e = expenses[i]; if(e && e.id) enqueue({ type: 'deleteExpense', id: e.id }); expenses.splice(i,1); saveData(); renderExpList(); } }
-
   let editId = null;
-  function openModal() { 
-      if(viewMode)return; editId=null; 
-      $('m_name').value=''; $('m_area').value=''; $('m_mob').value=''; 
-      $('m_bill').value=''; $('m_user').value=''; $('m_prevDue').value=''; 
-      $('m_expDate').value='';
-      $('modalOv').style.display='flex'; 
-  }
+  function openModal() { if(viewMode)return; editId=null; $('m_name').value=''; $('m_area').value=''; $('m_mob').value=''; $('m_bill').value=''; $('m_user').value=''; $('m_prevDue').value=''; $('m_expDate').value=''; $('modalOv').style.display='flex'; }
   function setBill() { $('m_bill').value = pkgRates[$('m_pkg').value]; }
-  function edit(id) { 
-      if(viewMode)return; editId=id; const u=users.find(x=>x.id==id); 
-      $('m_name').value=u.name; $('m_mob').value=u.mob; $('m_pkg').value=u.pkg; 
-      $('m_bill').value=u.bill; $('m_user').value=u.user||''; 
-      $('m_area').value=u.area || '';
-      $('m_prevDue').value = u.prevDue || 0; 
-      $('m_expDate').value = u.expDate || '';
-      $('modalOv').style.display='flex'; 
-  }
-  function saveUser() {
-    if(viewMode) return;
-    const d = { 
-        name: $('m_name').value, mob: $('m_mob').value, pkg: $('m_pkg').value, 
-        user: $('m_user').value, bill: Number($('m_bill').value), prevDue: Number($('m_prevDue').value),
-        area: $('m_area').value, expDate: $('m_expDate').value
-    };
-    if(!d.name) return alert("Name required");
-    
-    if(editId) { 
-      const idx = users.findIndex(x=>x.id==editId); 
-      users[idx] = {...users[idx], ...d}; 
-      enqueue({ type: 'updateUser', id: editId, data: {
-        name: d.name, mob: d.mob, pkg: d.pkg, user_id: d.user || null,
-        bill: d.bill, prev_due: d.prevDue, area: d.area, exp_date: d.expDate
-      }});
-    } 
-    else { 
-      const id = Date.now().toString();
-      users.unshift({...d, id, conn:'Active', pay:'Unpaid', due:0, prevDue:d.prevDue||0, payDate:null}); 
-      enqueue({ type: 'upsertUser', data: {
-        id, name: d.name, mob: d.mob, pkg: d.pkg,
-        user_id: d.user || null, bill: d.bill, conn: 'Active', pay: 'Unpaid', due: 0, prev_due: d.prevDue || 0, pay_date: null, area: d.area, exp_date: d.expDate
-      }});
-    }
-    $('modalOv').style.display='none'; saveData();
-  }
-  function archiveAndReset() {
-    if(viewMode) return alert("Switch to current month first");
-    const confirmName = prompt("Start new month? Due will move to 'Prev Due'.\nEnter Name:", $('monthInput').value);
-    if(!confirmName) return;
-    const snapshot = { users: JSON.parse(JSON.stringify(users)), expenses: JSON.parse(JSON.stringify(expenses)) };
-    const archiveId = Date.now().toString();
-    archives.push({ id: archiveId, name: confirmName, data: snapshot });
-    enqueue({ type: 'upsertArchive', data: { id: archiveId, name: confirmName, data: snapshot } });
-
-    users.forEach(u => { 
-        if(u.conn !== 'Free') { 
-             const oldPrev = Number(u.prevDue) || 0;
-             const currentDue = Number(u.due) || 0;
-             u.prevDue = oldPrev + currentDue; 
-             u.conn = 'Expired'; u.pay = 'Unpaid'; u.payDate = null; u.due = 0; 
-             enqueue({ type: 'updateUser', id: u.id, data: { prev_due: u.prevDue, conn: 'Expired', pay: 'Unpaid', pay_date: null, due: 0 } });
-        }
-    });
-    expenses = [];
-    saveData(); alert("New Month Started!");
-  }
-  function handleMonthChange(val) {
-    if(!val) return;
-    if(val === currentActiveMonthStr) {
-        viewMode = false; $('viewStatus').innerText = "⚡ Live Data"; $('viewStatus').style.background = "#f0fdf4"; $('viewStatus').style.color = "#16a34a";
-        fetchData(); return;
-    }
-    const arc = archives.find(a => a.name === val);
-    if(arc) {
-        viewMode = true; $('viewStatus').innerText = "🔒 Viewing History: " + val; $('viewStatus').style.background = "#fffbeb"; $('viewStatus').style.color = "#d97706";
-        users = arc.data.users; expenses = arc.data.expenses; render();
-    } else { alert("No data for " + val); }
-  }
-  
-  // Cleaned up: No Service Worker Logic Here
-  window.addEventListener('online', () => flushSyncQueue());
+  function edit(id) { if(viewMode)return; editId=id; const u=users.find(x=>x.id==id); $('m_name').value=u.name; $('m_mob').value=u.mob; $('m_pkg').value=u.pkg; $('m_bill').value=u.bill; $('m_user').value=u.user||''; $('m_area').value=u.area || ''; $('m_prevDue').value = u.prevDue || 0; $('m_expDate').value = u.expDate || ''; $('modalOv').style.display='flex'; }
+  function saveUser() { if(viewMode) return; const d = { name: $('m_name').value, mob: $('m_mob').value, pkg: $('m_pkg').value, user: $('m_user').value, bill: Number($('m_bill').value), prevDue: Number($('m_prevDue').value), area: $('m_area').value, expDate: $('m_expDate').value }; if(!d.name) return alert("Name required"); if(editId) { const idx = users.findIndex(x=>x.id==editId); users[idx] = {...users[idx], ...d}; enqueue({ type: 'updateUser', id: editId, data: { name: d.name, mob: d.mob, pkg: d.pkg, user_id: d.user || null, bill: d.bill, prev_due: d.prevDue, area: d.area, exp_date: d.expDate }}); } else { const id = Date.now().toString(); users.unshift({...d, id, conn:'Active', pay:'Unpaid', due:0, prevDue:d.prevDue||0, payDate:null}); enqueue({ type: 'upsertUser', data: { id, name: d.name, mob: d.mob, pkg: d.pkg, user_id: d.user || null, bill: d.bill, conn: 'Active', pay: 'Unpaid', due: 0, prev_due: d.prevDue || 0, pay_date: null, area: d.area, exp_date: d.expDate }}); } $('modalOv').style.display='none'; saveData(); }
+  function archiveAndReset() { if(viewMode) return alert("Switch to current month first"); const confirmName = prompt("Start new month? Due will move to 'Prev Due'.\nEnter Name:", $('monthInput').value); if(!confirmName) return; const snapshot = { users: JSON.parse(JSON.stringify(users)), expenses: JSON.parse(JSON.stringify(expenses)) }; const archiveId = Date.now().toString(); archives.push({ id: archiveId, name: confirmName, data: snapshot }); enqueue({ type: 'upsertArchive', data: { id: archiveId, name: confirmName, data: snapshot } }); users.forEach(u => { if(u.conn !== 'Free') { const oldPrev = Number(u.prevDue)||0, currentDue = Number(u.due)||0; u.prevDue = oldPrev + currentDue; u.conn = 'Expired'; u.pay = 'Unpaid'; u.payDate = null; u.due = 0; enqueue({ type: 'updateUser', id: u.id, data: { prev_due: u.prevDue, conn: 'Expired', pay: 'Unpaid', pay_date: null, due: 0 } }); } }); expenses = []; saveData(); alert("New Month Started!"); }
+  function handleMonthChange(val) { if(!val) return; if(val === currentActiveMonthStr) { viewMode = false; $('viewStatus').innerText = "⚡ Live Data (Auto Sync On)"; $('viewStatus').style.background = "#f0fdf4"; $('viewStatus').style.color = "#16a34a"; fetchData(); return; } const arc = archives.find(a => a.name === val); if(arc) { viewMode = true; $('viewStatus').innerText = "🔒 Viewing History: " + val; $('viewStatus').style.background = "#fffbeb"; $('viewStatus').style.color = "#d97706"; users = arc.data.users; expenses = arc.data.expenses; render(); } else { alert("No data for " + val); } }
+  window.addEventListener('online', flushSyncQueue);
   $('search').addEventListener('input', render);
   init();
 </script>
