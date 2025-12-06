@@ -3,213 +3,319 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
-  
   <meta name="theme-color" content="#3b5998">
+  <title>Laku WiFi Bill Collection APCL</title>
+  
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1043/1043445.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  
-  <title>WiFi Manager Pro Cloud</title>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   
   <style>
-    /* --- SAME CSS AS BEFORE --- */
-    body { background-color: #f0f2f5; margin: 0; font-family: 'Segoe UI', sans-serif; font-size: 14px; color: #333; max-width: 650px; margin: 0 auto; padding-bottom: 80px; user-select: none; -webkit-tap-highlight-color: transparent; scroll-behavior: smooth; }
-    .wap-header { background-color: #3b5998; color: #fff; padding: 12px 15px; font-weight: bold; font-size: 16px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    .wap-box { border: 1px solid #cbd5e1; margin: 15px 10px; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-    .box-head { background: #3b5998; color: white; padding: 10px 15px; font-weight: bold; display:flex; justify-content:space-between; }
-    .box-content { padding: 15px; }
-    .wap-inp, .wap-sel { border: 1px solid #cbd5e1; padding: 8px; width: 100%; box-sizing: border-box; border-radius: 4px; height: 38px; }
-    .wap-btn { background: #3b5998; color: white; border: 1px solid #1e293b; padding: 8px 12px; font-weight: bold; cursor: pointer; border-radius: 4px; }
-
-    /* TODAY'S ACTIVITY */
-    .today-card { margin: 10px; background: white; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow: hidden; }
-    .tc-head { padding: 10px 15px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; font-weight: bold; color: #334155; background: #f8fafc; }
-    .tc-grid { display: flex; padding: 10px; gap: 10px; }
-    .tc-item { flex: 1; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 5px; text-align: center; }
+    /* --- MAIN CSS --- */
+    body { background-color: #f0f2f5; margin: 0; font-family: 'Segoe UI', sans-serif; font-size: 13px; color: #333; max-width: 650px; margin: 0 auto; padding-bottom: 80px; user-select: none; -webkit-tap-highlight-color: transparent; scroll-behavior: smooth; }
     
-    .dash-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #e2e8f0; }
-    .d-item { background: #fff; padding: 15px 5px; text-align: center; display: flex; flex-direction: column; justify-content: center; height: 70px; }
-    .d-lbl { font-size: 11px; color: #64748b; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
-    .d-val { font-size: 18px; font-weight: 800; color: #1e293b; }
+    /* HEADER (FIXED TOP) */
+    .wap-header { background-color: #3b5998; color: #fff; padding: 0 15px; font-weight: bold; font-size: 16px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.1); height: 50px; box-sizing: border-box; position: sticky; top: 0; }
+    .header-left { display: flex; align-items: center; gap: 15px; }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .menu-icon { font-size: 20px; cursor: pointer; padding: 5px; }
+    #syncStatus { font-size: 11px; background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: background 0.3s; white-space: nowrap; }
 
-    #list { display: flex; flex-direction: column; gap: 12px; padding: 15px; }
-    .client-card { background: #fff; border-radius: 10px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 5px solid #ccc; transition: all 0.3s ease; }
+    .wap-box { border: 1px solid #cbd5e1; margin: 5px; background: #fff; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .box-head, .tc-head { background: #3b5998; color: white; padding: 6px 12px; font-weight: bold; display:flex; justify-content:space-between; font-size: 12px; align-items: center; }
+    .box-content { padding: 8px; }
+    .wap-inp, .wap-sel { border: 1px solid #cbd5e1; padding: 5px; width: 100%; box-sizing: border-box; border-radius: 4px; height: 32px; font-size: 13px; }
+    .wap-btn { background: #3b5998; color: white; border: 1px solid #1e293b; padding: 5px 10px; font-weight: bold; cursor: pointer; border-radius: 4px; font-size: 12px; }
+
+    /* --- STICKY STACK --- */
+    .sticky-stack { position: sticky; top: 50px; z-index: 900; background-color: #f0f2f5; padding-top: 0; padding-bottom: 5px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); transition: all 0.3s ease; }
+    .admin-only { display: block !important; }
+    .admin-only-inline { display: inline-block !important; }
+    
+    .page-header-card { background: #fff; margin: 0 5px 5px 5px; padding: 10px; border-radius: 0 0 8px 8px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #cbd5e1; border-top: none; display: none; color: #3b5998; }
+    .ph-title { font-size: 12px; color: #64748b; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }
+    .ph-val { font-size: 28px; font-weight: 800; color: #3b5998; }
+
+    /* --- DASHBOARD GRID --- */
+    .dash-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; padding: 5px; background: #fff; }
+    .d-item { background: #fff; border-radius: 6px; padding: 4px 2px; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.03); transition: transform 0.1s; height: 55px; }
+    .d-item:active { transform: scale(0.97); }
+    .d-icon { font-size: 12px; margin-bottom: 2px; opacity: 0.9; }
+    .d-lbl { font-size: 9px; font-weight: bold; text-transform: uppercase; margin-bottom: 1px; opacity: 0.8; }
+    .d-val { font-size: 14px; font-weight: 800; }
+
+    /* --- NEW ACTIVITY CARD CSS (UPDATED) --- */
+    .act-card { background: #fff; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; overflow: hidden; animation: slideIn 0.3s ease-out; }
+    .act-head { padding: 12px 15px; color: white; font-weight: bold; font-size: 14px; display: flex; justify-content: space-between; align-items: center; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+    .head-today { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+    .head-yest { background: linear-gradient(135deg, #64748b 0%, #475569 100%); }
+    .act-body { padding: 15px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .act-item { text-align: center; padding: 10px 5px; border-radius: 8px; background: #f8fafc; border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: center; }
+    .act-val { font-size: 16px; font-weight: 800; margin-bottom: 4px; }
+    .act-lbl { font-size: 9px; font-weight: bold; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+    .c-green { color: #16a34a; } .c-red { color: #dc2626; } .c-blue { color: #0284c7; }
+    .act-footer { background: #f0f9ff; border-top: 1px dashed #bae6fd; color: #0369a1; padding: 10px; text-align: center; font-weight: bold; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+    /* --- TODAY ACTIVITY (SMALL) --- */
+    .today-card { margin: 8px 5px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; border: 1px solid #cbd5e1; }
+    .tc-grid { display: flex; padding: 8px; gap: 8px; }
+    .tc-item { flex: 1; border-radius: 6px; padding: 8px 2px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; flex-direction: column; justify-content: center; align-items: center; }
+    .tc-lbl { font-size: 9px; font-weight: bold; margin-bottom: 2px; text-transform: uppercase; opacity: 0.8; }
+    .tc-val { font-size: 15px; font-weight: 800; }
+    .tc-icon { font-size: 13px; margin-bottom: 3px; opacity: 0.9; }
+
+    /* --- RECENT UPDATES --- */
+    #recentBox { display: block; border-color: #e0f2fe; margin-top: 5px; margin-bottom: 5px; background: #fff; }
+    #recentList { max-height: 120px; overflow-y: auto; scrollbar-width: thin; }
+    .log-item { font-size: 11px; padding: 8px 10px; border-bottom: 1px solid #f1f5f9; color: #334155; display: flex; justify-content: space-between; align-items: center; animation: slideIn 0.3s ease-out; }
+    .log-item:nth-child(even) { background: #f8fafc; }
+    .log-amount { font-weight: bold; color: #16a34a; background: #dcfce7; padding: 2px 6px; border-radius: 10px; font-size: 10px; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* CLIENT CARD */
+    #list { display: flex; flex-direction: column; gap: 8px; padding: 5px; scroll-margin-top: 250px; } 
+    .client-card { background: #fff; border-radius: 8px; padding: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border-left: 4px solid #ccc; transition: all 0.3s ease; cursor: pointer; }
+    .client-card:active { transform: scale(0.98); background-color: #f8fafc; }
     .card-paid { border-left-color: #22c55e; opacity: 0.9; } .card-due { border-left-color: #f59e0b; } 
     .card-exp { border-left-color: #ef4444; border: 2px solid #fee2e2; } .card-free { border-left-color: #06b6d4; }
-    .card-header { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px dashed #eee; padding-bottom: 8px; }
-    .c-name { font-size: 16px; font-weight: bold; color: #1e293b; }
-    .card-body { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px; color: #555; }
-    .prev-due-box { grid-column: span 2; background: #fef2f2; color: #dc2626; padding: 5px; border-radius: 4px; font-weight: bold; text-align: center; border: 1px dashed #fca5a5; margin-top: 5px; }
-    .card-actions { display: flex; gap: 8px; margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px; }
-    .btn-icon { flex: 1; border: none; padding: 8px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; display:flex; align-items:center; justify-content:center; gap:5px; }
-    .btn-call { background: #e0f2fe; color: #0284c7; } .btn-wa { background: #dcfce7; color: #16a34a; } .btn-edit { background: #f1f5f9; color: #475569; }
-    .btn-bill { background: #eef2ff; color: #4f46e5; }
-    .btn-hist { background: #fff7ed; color: #ea580c; }
-
-    .wap-footer { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 2px solid #3b5998; padding: 10px 0; display: flex; justify-content: space-around; z-index: 100; max-width: 650px; margin: 0 auto; }
-    .f-item { color: #64748b; text-decoration: none; font-weight: bold; font-size: 11px; display:flex; flex-direction:column; align-items:center; }
-    .f-item.active { color: #3b5998; }
-    .modal-ov { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 200; }
-    .modal-box { background: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px; max-height: 80vh; overflow-y: auto; }
+    .card-inactive { background: #fff1f2; border-left-color: #e11d48; opacity: 0.85; }
+    .card-header { display: flex; justify-content: space-between; margin-bottom: 5px; border-bottom: 1px dashed #eee; padding-bottom: 4px; }
+    .c-name { font-size: 14px; font-weight: bold; color: #1e293b; }
+    .card-body { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 12px; color: #555; }
+    .prev-due-box { grid-column: span 2; background: #fef2f2; color: #dc2626; padding: 3px; border-radius: 4px; font-weight: bold; text-align: center; border: 1px dashed #fca5a5; margin-top: 3px; font-size: 11px; }
     
-    #syncStatus { font-size: 11px; color: white; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 10px; margin-left: 10px; display: inline-block; transition: background 0.3s; }
-    .scroll-btns { position: fixed; bottom: 85px; right: 15px; display: flex; flex-direction: column; gap: 10px; z-index: 99; }
-    .s-btn { background: rgba(59, 89, 152, 0.85); color: white; border: none; padding: 0; width: 40px; height: 40px; border-radius: 50%; box-shadow: 0 4px 6px rgba(0,0,0,0.2); cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+    /* Manage Client Modal */
+    .control-box { background: #f0f9ff; border: 1px solid #bae6fd; padding: 10px; border-radius: 6px; margin-bottom: 10px; }
+    .cb-label { font-size: 11px; font-weight: bold; color: #0284c7; margin-bottom: 4px; display: block; text-transform: uppercase; }
+    .manage-grid { display: flex; gap: 8px; margin-top: 8px; }
+    .manage-btn-row { display: flex; gap: 10px; margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; }
 
-    .chart-container { position: relative; height: 200px; width: 100%; margin-top: 10px; display:flex; justify-content:center; }
-    .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    .data-table th, .data-table td { border: 1px solid #eee; padding: 6px; text-align: left; }
+    .card-actions { display: flex; gap: 5px; margin-top: 6px; border-top: 1px solid #eee; padding-top: 6px; }
+    .btn-icon { flex: 1; border: none; padding: 5px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px; display:flex; align-items:center; justify-content:center; gap:3px; }
+    .btn-call { background: #e0f2fe; color: #0284c7; } .btn-wa { background: #dcfce7; color: #16a34a; } .btn-edit { background: #f1f5f9; color: #475569; }
+    .btn-bill { background: #eef2ff; color: #4f46e5; } .btn-hist { background: #fff7ed; color: #ea580c; }
+
+    .wap-footer { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 2px solid #3b5998; padding: 6px 0; display: flex; justify-content: space-around; z-index: 100; max-width: 650px; margin: 0 auto; }
+    .f-item { color: #64748b; text-decoration: none; font-weight: bold; font-size: 10px; display:flex; flex-direction:column; align-items:center; cursor: pointer; }
+    .f-item i { font-size: 14px; margin-bottom: 2px; }
+    .f-item.active { color: #3b5998; }
+    
+    .modal-ov { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 3000; }
+    .modal-box { background: white; padding: 15px; border-radius: 8px; width: 90%; max-width: 400px; max-height: 80vh; overflow-y: auto; }
+    .scroll-btns { position: fixed; bottom: 60px; right: 10px; display: flex; flex-direction: column; gap: 8px; z-index: 99; }
+    .s-btn { background: rgba(59, 89, 152, 0.85); color: white; border: none; padding: 0; width: 32px; height: 32px; border-radius: 50%; box-shadow: 0 4px 6px rgba(0,0,0,0.2); cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+
+    .data-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .data-table th, .data-table td { border: 1px solid #eee; padding: 5px; text-align: left; }
     .data-table th { background: #f8fafc; color: #3b5998; }
 
-    /* Security Overlay */
-    #lockScreen { position: fixed; inset: 0; background: #3b5998; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
+    /* MENU DROPDOWN */
+    #dropdownMenu { display: none; position: fixed; top: 50px; left: 5px; background: white; border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 220px; z-index: 2000; overflow: hidden; border: 1px solid #cbd5e1; }
+    .menu-item { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; font-size: 13px; color: #334155; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: background 0.2s; }
+    .menu-item:last-child { border-bottom: none; }
+    .menu-item:active { background: #f0f9ff; color: #3b5998; }
 
     @media print {
-        .wap-header, .wap-box, .today-card, .scroll-btns, .wap-footer, .modal-ov, .dash-grid, #filterArea, #list { display: none !important; }
+        .wap-header, .sticky-stack, .today-card, .scroll-btns, .wap-footer, .modal-ov, #filterArea, #list, #recentBox, #dropdownMenu, #sec_filter { display: none !important; }
         body { background: #fff !important; margin: 0 !important; padding: 0 !important; height: auto !important; overflow: visible !important; }
         #invoiceArea { display: block !important; position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; margin: 0 !important; padding: 20px !important; background: white !important; z-index: 9999 !important; }
         #invoiceArea * { visibility: visible !important; color: #000 !important; }
     }
   </style>
 </head>
-<body>
-
-  <div id="lockScreen">
-      <div style="font-size:24px; font-weight:bold; margin-bottom:20px;"><i class="fas fa-lock"></i> Security Check</div>
-      <input type="password" id="pinInput" placeholder="Enter PIN" style="padding:10px; border-radius:5px; border:none; text-align:center; font-size:18px; width:150px;">
-      <button onclick="checkPin()" style="margin-top:15px; padding:8px 20px; background:white; color:#3b5998; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">Unlock</button>
+<body class="admin-mode"> <div id="menuBackdrop" style="display:none; position:fixed; inset:0; z-index:1000; background:transparent;" onclick="toggleMenu()"></div>
+  <div id="dropdownMenu">
+      <div class="menu-item" onclick="switchPage('dashboard')"><i class="fas fa-th-large" style="color:#3b5998;"></i> Dashboard / Home</div>
+      <div class="menu-item" onclick="switchPage('all_list')"><i class="fas fa-users" style="color:#3b5998;"></i> All Client List</div>
+      <div class="menu-item" onclick="switchPage('active_line')"><i class="fas fa-bolt" style="color:#0284c7;"></i> Active Line</div>
+      <div class="menu-item" onclick="switchPage('paid_line')"><i class="fas fa-check-circle" style="color:#16a34a;"></i> Paid Line</div>
+      <div class="menu-item" onclick="switchPage('unpaid_line')"><i class="fas fa-times-circle" style="color:#d97706;"></i> Unpaid Line</div>
+      <div class="menu-item" onclick="switchPage('expired_line')"><i class="fas fa-user-times" style="color:#dc2626;"></i> Expired Line</div>
+      <div class="menu-item" onclick="switchPage('activity')"><i class="fas fa-history" style="color:#64748b;"></i> Activity (7 Days)</div>
   </div>
 
   <div class="wap-header">
-    <div style="display:flex; align-items:center;">
-        <i class="fas fa-wifi"></i> &nbsp; WiFi Manager
-        <span id="syncStatus"><i class="fas fa-circle-notch fa-spin"></i> Checking...</span>
+    <div class="header-left">
+        <i class="fas fa-bars menu-icon" onclick="toggleMenu()"></i>
+        <span>WiFi Manager</span>
     </div>
-    <div style="display:flex; gap:10px;">
-        <div style="cursor: pointer; font-size:16px;" onclick="openSettings()"><i class="fas fa-cog"></i></div>
-        <div style="cursor: pointer; font-size:13px; background:rgba(255,255,255,0.2); padding:4px 8px; border-radius:4px;" onclick="forceSave()">
-        <i class="fas fa-sync-alt"></i> Sync
+    <div class="header-right">
+        <div id="syncStatus" onclick="forceSave()"><i class="fas fa-circle-notch fa-spin"></i> Checking...</div>
+        <i class="fas fa-cog" style="cursor: pointer; font-size:18px;" onclick="openSettings()"></i>
+    </div>
+  </div>
+
+  <div id="scrollableTop">
+      <div id="sec_select_month" class="wap-box" style="margin-bottom:5px;">
+        <div class="box-head" style="justify-content:center;">Select Month</div>
+        <div style="display: flex; gap: 5px; justify-content: center; align-items: center; background: #f8fafc; padding: 5px;">
+          <input type="month" id="monthInput" onchange="handleMonthChange(this.value)" class="wap-inp" style="width:auto;">
+          <button class="wap-btn" style="background:#16a34a;" onclick="exportExcel()"><i class="fas fa-file-excel"></i></button>
+          <button class="wap-btn admin-only-inline" id="btnEndMonth" style="background:#dc2626;" onclick="archiveAndReset()">End</button>
         </div>
-    </div>
-  </div>
-
-  <div class="wap-box">
-    <div class="box-head" style="justify-content:center;">Select Month</div>
-    <div style="display: flex; gap: 5px; justify-content: center; align-items: center; background: #f8fafc; padding: 10px;">
-      <input type="month" id="monthInput" onchange="handleMonthChange(this.value)" class="wap-inp" style="width:auto;">
-      <button class="wap-btn" style="background:#16a34a;" onclick="exportExcel()"><i class="fas fa-file-excel"></i></button>
-      <button class="wap-btn" style="background:#dc2626;" onclick="archiveAndReset()">End</button>
-    </div>
-    <div id="viewStatus" style="text-align:center; padding:5px; font-size:12px; font-weight:bold; color:#16a34a; background:#f0fdf4; border-top:1px solid #e2e8f0;">
-        ⚡ Live Data (Auto Sync On)
-    </div>
-  </div>
-
-  <div class="today-card">
-    <div class="tc-head">
-      <span><i class="fas fa-calendar-check" style="color:#3b5998; margin-right:5px;"></i> TODAY'S ACTIVITY</span>
-      <span style="font-size:11px; font-weight:bold; color:#64748b;" id="todayDate"></span>
-    </div>
-    <div class="tc-grid">
-      <div class="tc-item" style="border-color:#bbf7d0; background:#f0fdf4">
-        <span style="font-size:11px; color:#16a34a; font-weight:bold;">Collected</span>
-        <div style="font-weight:bold; font-size:16px; color:#16a34a" id="tColl">0</div>
+        <div id="viewStatus" style="text-align:center; padding:5px; font-size:11px; font-weight:bold; color:#16a34a; background:#f0fdf4; border-top:1px solid #e2e8f0;">⚡ Live Data (Auto Sync On)</div>
       </div>
-      <div class="tc-item" style="border-color:#fecaca; background:#fef2f2">
-        <span style="font-size:11px; color:#dc2626; font-weight:bold;">Expense</span>
-        <div style="font-weight:bold; font-size:16px; color:#dc2626" id="tExp">0</div>
-      </div>
-      <div class="tc-item" style="border-color:#bae6fd; background:#f0f9ff">
-        <span style="font-size:11px; color:#0284c7; font-weight:bold;">Profit</span>
-        <div style="font-weight:bold; font-size:16px; color:#0284c7" id="tNet">0</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="wap-box">
-    <div class="box-head">Dashboard Overview</div>
-    <div class="dash-grid">
-      <div class="d-item"><div class="d-lbl">Active (All)</div><div class="d-val" id="vAct">0</div></div>
-      <div class="d-item"><div class="d-lbl">Paid User</div><div class="d-val" style="color:#16a34a" id="vPaid">0</div></div>
-      <div class="d-item"><div class="d-lbl">Unpaid User</div><div class="d-val" style="color:#f59e0b" id="vUnpaid">0</div></div>
       
-      <div class="d-item"><div class="d-lbl">Current Due</div><div class="d-val" style="color:#d97706" id="vCurrDue">0</div></div>
-      <div class="d-item"><div class="d-lbl">Prev. Due</div><div class="d-val" style="color:#dc2626" id="vPrevDueTotal">0</div></div>
-      <div class="d-item"><div class="d-lbl">Collected</div><div class="d-val" style="color:#3b5998" id="vColl">0</div></div>
-      
-      <div class="d-item"><div class="d-lbl">Expired</div><div class="d-val" style="color:#ef4444" id="vExp">0</div></div>
-      <div class="d-item" onclick="openExpModal()"><div class="d-lbl" style="text-decoration:underline; cursor:pointer; color:#ef4444;">Total Exp.</div><div class="d-val" style="color:#ef4444" id="vExpense">0</div></div>
-      <div class="d-item"><div class="d-lbl">Net Profit</div><div class="d-val" style="color:#16a34a" id="vNet">0</div></div>
-    </div>
-    
-    <div style="padding:10px; background:#f8fafc; border-top:1px solid #eee;">
-        <div style="font-size:12px; font-weight:bold; color:#64748b; margin-bottom:5px; text-align:center;">Analytics</div>
-        <div style="display:flex; gap:10px;">
-            <div class="chart-container" style="flex:1;"><canvas id="statusChart"></canvas></div>
-            <div class="chart-container" style="flex:1;"><canvas id="financeChart"></canvas></div>
+      <div id="activityCompSection" style="display:none; padding:5px;"></div>
+
+      <div id="sec_recent">
+          <div class="wap-box" id="recentBox">
+              <div style="background:#f0f9ff; color:#0284c7; padding:6px 10px; font-weight:bold; font-size:12px; display:flex; justify-content:space-between; border-bottom:1px solid #e0f2fe; align-items:center;">
+                  <span><i class="fas fa-history"></i> Recent (Global)</span>
+                  <span style="font-size:9px; cursor:pointer; background:white; padding:2px 6px; border-radius:8px; border:1px solid #bae6fd;" onclick="clearLogs()">Clear Local</span>
+              </div>
+              <div id="recentList"></div>
+          </div>
+      </div>
+
+      <div id="sec_today" class="today-card">
+        <div class="tc-head">
+          <span><i class="fas fa-calendar-day" style="margin-right:5px;"></i> TODAY</span>
+          <span style="font-size:10px; font-weight:bold; color:#3b5998; background:white; padding:2px 6px; border-radius:4px;" id="todayDate"></span>
         </div>
-    </div>
-  </div>
+        <div class="tc-grid">
+          <div class="tc-item" style="background:linear-gradient(180deg, #f0fdf4 0%, #fff 100%); border:1px solid #dcfce7;">
+            <div class="tc-icon" style="color:#16a34a;"><i class="fas fa-hand-holding-usd"></i></div>
+            <div class="tc-lbl" style="color:#16a34a;">COLLECTED</div>
+            <div class="tc-val" style="color:#15803d;" id="tColl">0</div>
+          </div>
+          <div class="tc-item" style="background:linear-gradient(180deg, #fef2f2 0%, #fff 100%); border:1px solid #fee2e2;">
+            <div class="tc-icon" style="color:#dc2626;"><i class="fas fa-shopping-cart"></i></div>
+            <div class="tc-lbl" style="color:#dc2626;">EXPENSE</div>
+            <div class="tc-val" style="color:#b91c1c;" id="tExp">0</div>
+          </div>
+          <div class="tc-item" style="background:linear-gradient(180deg, #f0f9ff 0%, #fff 100%); border:1px solid #e0f2fe;">
+            <div class="tc-icon" style="color:#0284c7;"><i class="fas fa-chart-line"></i></div>
+            <div class="tc-lbl" style="color:#0284c7;">PROFIT</div>
+            <div class="tc-val" style="color:#0369a1;" id="tNet">0</div>
+          </div>
+        </div>
+      </div>
 
-  <div class="wap-box" style="position: sticky; top: 50px; z-index: 40; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-    <div class="box-content" style="padding-bottom:5px;">
-        <select id="filterArea" class="wap-sel" style="background:#f1f5f9; font-weight:bold; color:#3b5998;" onchange="render()">
-            <option value="all">📍 All Areas (সব এলাকা)</option>
-            <option value="Boiddonat">Boiddonat</option>
-            <option value="Fotekha">Fotekha</option>
-            <option value="Sorkar tari">Sorkar tari</option>
-            <option value="Chaitantola">Chaitantola</option>
-            <option value="Khamar">Khamar</option>
-            <option value="hobiyar dokan">hobiyar dokan</option>
-            <option value="Master er mor">Master er mor</option>
-        </select>
-    </div>
-    <div class="box-content" style="display:flex; gap:8px; padding-top:0;">
-      <input id="search" class="wap-inp" placeholder="Search..." style="flex:1; border: 2px solid #3b5998;" oninput="render()">
-      <button class="wap-btn" style="background:#25D366; color:#fff;" onclick="openBulkModal()"><i class="fab fa-whatsapp"></i> List</button>
-      <button class="wap-btn" onclick="openModal()"><i class="fas fa-plus"></i></button>
-    </div>
-  </div>
+      <div id="chartSection" class="wap-box" style="display:none; padding:15px; text-align:center;">
+          <div class="box-head" style="margin-bottom:10px;">📊 Statistics</div>
+          <div style="position: relative; height:200px; width:100%;">
+              <canvas id="myChart"></canvas>
+          </div>
+      </div>
+  </div> 
+  <div class="sticky-stack">
+      <div id="sec_dash" class="wap-box" style="margin-top:0; margin-bottom:5px;">
+        <div class="box-head">Dashboard Overview</div>
+        <div class="dash-grid">
+          <div class="d-item" style="border:1px solid #e0f2fe; background:linear-gradient(180deg, #f0f9ff 0%, #fff 100%);">
+              <div class="d-icon" style="color:#0284c7"><i class="fas fa-signal"></i></div>
+              <div class="d-lbl" style="color:#0284c7">ACTIVE</div>
+              <div class="d-val" id="vAct">0</div>
+          </div>
+          <div class="d-item" style="border:1px solid #dcfce7; background:linear-gradient(180deg, #f0fdf4 0%, #fff 100%);">
+              <div class="d-icon" style="color:#16a34a"><i class="fas fa-check-circle"></i></div>
+              <div class="d-lbl" style="color:#16a34a">PAID</div>
+              <div class="d-val" style="color:#15803d" id="vPaid">0</div>
+          </div>
+          <div class="d-item" style="border:1px solid #fef3c7; background:linear-gradient(180deg, #fffbeb 0%, #fff 100%);">
+              <div class="d-icon" style="color:#d97706"><i class="fas fa-times-circle"></i></div>
+              <div class="d-lbl" style="color:#d97706">UNPAID</div>
+              <div class="d-val" style="color:#b45309" id="vUnpaid">0</div>
+          </div>
+          <div class="d-item" style="border:1px solid #ffedd5; background:linear-gradient(180deg, #fff7ed 0%, #fff 100%);">
+              <div class="d-icon" style="color:#ea580c"><i class="fas fa-hand-holding-usd"></i></div>
+              <div class="d-lbl" style="color:#ea580c">CURR. DUE</div>
+              <div class="d-val" style="color:#c2410c" id="vCurrDue">0৳</div>
+          </div>
+          <div class="d-item" style="border:1px solid #fee2e2; background:linear-gradient(180deg, #fef2f2 0%, #fff 100%);">
+              <div class="d-icon" style="color:#dc2626"><i class="fas fa-history"></i></div>
+              <div class="d-lbl" style="color:#dc2626">PREV. DUE</div>
+              <div class="d-val" style="color:#b91c1c" id="vPrevDueTotal">0৳</div>
+          </div>
+          <div class="d-item" style="border:1px solid #e0e7ff; background:linear-gradient(180deg, #eef2ff 0%, #fff 100%);">
+              <div class="d-icon" style="color:#4f46e5"><i class="fas fa-wallet"></i></div>
+              <div class="d-lbl" style="color:#4f46e5">COLLECT</div>
+              <div class="d-val" style="color:#4338ca" id="vColl">0৳</div>
+          </div>
+          <div class="d-item" style="border:1px solid #fee2e2; background:linear-gradient(180deg, #fef2f2 0%, #fff 100%);">
+              <div class="d-icon" style="color:#ef4444"><i class="fas fa-user-times"></i></div>
+              <div class="d-lbl" style="color:#ef4444">EXPIRED</div>
+              <div class="d-val" style="color:#b91c1c" id="vExp">0</div>
+          </div>
+          <div class="d-item" onclick="openExpModal()" style="border:1px solid #fee2e2; background:linear-gradient(180deg, #fef2f2 0%, #fff 100%); cursor:pointer;">
+              <div class="d-icon" style="color:#ef4444"><i class="fas fa-receipt"></i></div>
+              <div class="d-lbl" style="color:#ef4444; text-decoration:underline;">EXPENSE</div>
+              <div class="d-val" style="color:#b91c1c" id="vExpense">0৳</div>
+          </div>
+          <div class="d-item" style="border:1px solid #dcfce7; background:linear-gradient(180deg, #f0fdf4 0%, #fff 100%);">
+              <div class="d-icon" style="color:#16a34a"><i class="fas fa-chart-line"></i></div>
+              <div class="d-lbl" style="color:#16a34a">NET</div>
+              <div class="d-val" style="color:#15803d" id="vNet">0৳</div>
+          </div>
+        </div>
+      </div>
 
-  <div class="wap-box">
-    <div class="box-head">Client List</div>
+      <div id="pageHeader" class="page-header-card">
+          <div class="ph-title" id="phTitle">Title</div>
+          <div class="ph-val" id="phVal">0</div>
+      </div>
+
+      <div id="sec_filter" class="wap-box" style="margin-top:0; margin-bottom:5px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+        <div style="padding: 0 8px;">
+            <select id="filterArea" class="wap-sel" style="background:#f1f5f9; font-weight:bold; color:#3b5998; height:30px; padding:2px; border:none; width:100%;" onchange="render()">
+                <option value="all">📍 All Areas (সব এলাকা)</option>
+                <option value="Boiddonat">Boiddonat</option>
+                <option value="Fotekha">Fotekha</option>
+                <option value="Sorkar tari">Sorkar tari</option>
+                <option value="Chaitantola">Chaitantola</option>
+                <option value="Khamar">Khamar</option>
+                <option value="hobiyar dokan">hobiyar dokan</option>
+                <option value="Master er mor">Master er mor</option>
+            </select>
+        </div>
+        <div class="box-content" style="display:flex; gap:5px; padding:8px; padding-top:2px;">
+          <input id="search" class="wap-inp" placeholder="Search..." style="flex:1; border: 2px solid #3b5998; height:35px;" oninput="render()">
+          <button class="wap-btn" style="background:#25D366; color:#fff; height:35px; width:40px; padding:0; display:flex; align-items:center; justify-content:center;" onclick="openBulkModal()"><i class="fab fa-whatsapp" style="font-size:16px;"></i></button>
+          <button class="wap-btn admin-only-inline" id="btnAddUser" style="height:35px; width:40px; padding:0; display:flex; align-items:center; justify-content:center; background:#3b5998;" onclick="openModal()"><i class="fas fa-plus" style="font-size:14px;"></i></button>
+        </div>
+      </div>
+  </div>
+  <div class="wap-box" id="clientSection" style="margin-top:5px;">
+    <div class="box-head" id="clientListHead">Client List <span id="adminBadge" class="admin-only-inline" style="font-size:10px; background:yellow; color:black; padding:1px 4px; border-radius:3px;">ADMIN</span></div>
     <div id="list"></div>
   </div>
 
+  <div class="wap-footer" id="wapFooter">
+    <a class="f-item active" onclick="handleFooterClick('all')"><i class="fas fa-users"></i> All</a>
+    <a class="f-item" onclick="handleFooterClick('paid')"><i class="fas fa-check-circle"></i> Paid</a>
+    <a class="f-item" onclick="handleFooterClick('unpaid')"><i class="fas fa-exclamation-circle"></i> Unpaid</a>
+    <a class="f-item" onclick="handleFooterClick('due')"><i class="fas fa-hand-holding-usd"></i> Due</a>
+    <a class="f-item" onclick="openExpModal()"><i class="fas fa-receipt"></i> Exp</a>
+  </div>
+
   <div class="scroll-btns">
-    <button class="s-btn" onclick="window.scrollTo(0,0)"><i class="fas fa-arrow-up"></i></button>
+    <button class="s-btn" onclick="scrollToTopList()"><i class="fas fa-arrow-up"></i></button>
     <button class="s-btn" onclick="window.scrollTo(0, document.body.scrollHeight)"><i class="fas fa-arrow-down"></i></button>
   </div>
 
-  <div style="height: 80px;"></div>
-
-  <div class="wap-footer">
-    <a href="#" class="f-item active" onclick="setFilter('all')"><i class="fas fa-users"></i> All</a>
-    <a href="#" class="f-item" onclick="setFilter('paid')"><i class="fas fa-check-circle"></i> Paid</a>
-    <a href="#" class="f-item" onclick="setFilter('unpaid')"><i class="fas fa-exclamation-circle"></i> Unpaid</a>
-    <a href="#" class="f-item" onclick="setFilter('due')"><i class="fas fa-hand-holding-usd"></i> Due</a>
-    <a href="#" class="f-item" onclick="openExpModal()"><i class="fas fa-receipt"></i> Exp</a>
-  </div>
+  <div style="height: 60px;"></div>
 
   <div class="modal-ov" id="settingsOv">
     <div class="modal-box">
       <h3 style="margin-top:0; color:#3b5998;">⚙️ Settings <i class="fas fa-times" onclick="$('settingsOv').style.display='none'" style="float:right;cursor:pointer;color:#333;"></i></h3>
-      <div style="margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px;">
-        <div style="font-weight:bold; margin-bottom:5px;">Change PIN</div>
-        <div style="display:flex; gap:5px;">
-            <input id="newPin" class="wap-inp" placeholder="New PIN (e.g. 1234)">
-            <button class="wap-btn" onclick="changePin()">Save</button>
+      <div id="adminSettingsPanel" class="admin-only">
+        <div style="margin-bottom:10px;">
+            <div style="font-weight:bold; margin-bottom:5px;">Data Backup & Restore</div>
+            <button class="wap-btn" style="width:100%; margin-bottom:10px; background:#0284c7;" onclick="backupData()"><i class="fas fa-download"></i> Download Backup File</button>
+            <input type="file" id="restoreFile" style="display:none" onchange="restoreData(this)">
+            <button class="wap-btn" style="width:100%; background:#f59e0b;" onclick="$('restoreFile').click()"><i class="fas fa-upload"></i> Restore Backup File</button>
         </div>
       </div>
-      <div style="margin-bottom:10px;">
-        <div style="font-weight:bold; margin-bottom:5px;">Data Backup & Restore</div>
-        <button class="wap-btn" style="width:100%; margin-bottom:10px; background:#0284c7;" onclick="backupData()"><i class="fas fa-download"></i> Download Backup File</button>
-        <input type="file" id="restoreFile" style="display:none" onchange="restoreData(this)">
-        <button class="wap-btn" style="width:100%; background:#f59e0b;" onclick="$('restoreFile').click()"><i class="fas fa-upload"></i> Restore Backup File</button>
-        <small style="color:#666; display:block; margin-top:5px;">*Restoring will replace all current data.</small>
+      <div style="margin-top:15px; border-top:1px solid #eee; padding-top:10px;">
+        <div style="font-weight:bold; color:#dc2626; margin-bottom:5px;">Troubleshooting</div>
+        <button class="wap-btn" style="width:100%; background:#ef4444;" onclick="fixSyncIssue()"><i class="fas fa-wrench"></i> Fix Sync/Queue Stuck</button>
+        <button class="wap-btn" style="width:100%; background:#64748b; margin-top:10px;" onclick="location.reload()">Reload App</button>
       </div>
     </div>
   </div>
@@ -248,13 +354,26 @@
     </div>
   </div>
 
+  <div class="modal-ov" id="manageClientOv">
+    <div class="modal-box">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:5px;">
+          <h3 style="margin:0; color:#3b5998;">Manage Client</h3>
+          <i class="fas fa-times" onclick="closeManageModal()" style="font-size:18px; cursor:pointer; color:#666;"></i>
+      </div>
+      <div id="manageContent"></div>
+    </div>
+  </div>
+
   <div class="modal-ov" id="expOv">
     <div class="modal-box">
       <h3 style="margin-top:0; color:#ef4444;">Expenses <i class="fas fa-times" onclick="$('expOv').style.display='none'" style="float:right;cursor:pointer;color:#333;"></i></h3>
-      <input id="ex_reason" class="wap-inp" placeholder="Reason" style="margin-bottom:8px;">
-      <input id="ex_amount" type="number" class="wap-inp" placeholder="Amount" style="margin-bottom:8px;">
-      <button class="wap-btn" onclick="saveExpense()" style="width:100%; background:#ef4444;">Add</button>
-      <div id="expList" style="max-height:200px; overflow-y:auto; margin-top:10px;"></div>
+      <div id="addExpArea" class="admin-only">
+          <input id="ex_reason" class="wap-inp" placeholder="Reason" style="margin-bottom:8px;">
+          <input id="ex_amount" type="number" class="wap-inp" placeholder="Amount" style="margin-bottom:8px;">
+          <button class="wap-btn" onclick="saveExpense()" style="width:100%; background:#ef4444;">Add Expense</button>
+      </div>
+      <div style="border-top:1px solid #eee; margin-top:10px; padding-top:10px; font-weight:bold; color:#666;">History:</div>
+      <div id="expList" style="max-height:200px; overflow-y:auto; margin-top:5px;"></div>
     </div>
   </div>
 
@@ -325,53 +444,128 @@
   const QUEUE_KEY = 'wifi_sync_queue';
   const SUPABASE_URL = 'https://afybenuinfrszbudovvw.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFmeWJlbnVpbmZyc3pidWRvdnZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzNDkwMTYsImV4cCI6MjA3OTkyNTAxNn0.cxtcvmXvVMPy-hhLq2NNk5T_3K-kZJBUCaBAgG3my9g';
-  const PIN_KEY = 'wifi_pin_v1';
-  const SESSION_KEY = 'wifi_session_ts';
-  const SESSION_TIME = 5 * 60 * 1000; // 5 Minutes
-
+  
   const $ = id => document.getElementById(id);
   const pkgRates = {"5Mbps":300, "10Mbps":400, "12Mbps":500, "20Mbps":800};
-  let currentFilter = 'all';
+  
+  let currentPage = 'dashboard'; 
+  let currentFilter = 'all'; 
+  let myChartInstance = null; 
+
+  // True = Footer Click (Sticky Dashboard + Filter)
+  // False = Dropdown Click (Sticky Title + Filter, No Dash)
+  let showStickyDash = false; 
+
   let users = [], expenses = [], archives = [];
-  let viewMode = false;
+  let persistentLogs = []; 
+  
+  let isAdmin = true; 
   let currentActiveMonthStr = "";
-  let stChart = null, fnChart = null;
 
-  const getTodayStr = () => new Date().toISOString().split('T')[0];
+  // DATE HELPERS (BD TIME)
+  const getTodayStr = () => {
+    const d = new Date().toLocaleString("en-US", {timeZone: "Asia/Dhaka"});
+    const dateObj = new Date(d);
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
-  // --- SMART SECURITY PIN CHECK ---
-  function checkSession() {
-      const lastLogin = localStorage.getItem(SESSION_KEY);
-      if (lastLogin && (Date.now() - lastLogin < SESSION_TIME)) {
-          $('lockScreen').style.display = 'none'; // Auto unlock if valid
-      } else {
-          $('lockScreen').style.display = 'flex'; // Show lock
-      }
+  const getYesterdayStr = () => {
+    const d = new Date().toLocaleString("en-US", {timeZone: "Asia/Dhaka"});
+    const dateObj = new Date(d);
+    dateObj.setDate(dateObj.getDate() - 1); 
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // --- STATS CALCULATION HELPER ---
+  function getStatsForDate(dateStr) {
+      let stats = { coll: 0, exp: 0, paidCount: 0 };
+      users.forEach(u => {
+          if (u.payDate === dateStr) {
+              const bill = Number(u.bill) || 0;
+              const due = Number(u.due) || 0;
+              let collected = 0;
+              if (u.conn !== 'Free') {
+                 if (due > 0) collected = bill - due; 
+                 else if (u.pay === 'Paid') collected = bill;
+              }
+              stats.coll += collected;
+              if (u.pay === 'Paid') stats.paidCount++;
+          }
+      });
+      expenses.forEach(e => {
+          if (e.date === dateStr) stats.exp += (Number(e.amnt) || 0);
+      });
+      return stats;
   }
 
-  function checkPin() {
-      const pin = localStorage.getItem(PIN_KEY) || "1234";
-      const inp = $('pinInput').value;
-      if(inp === pin) {
-          localStorage.setItem(SESSION_KEY, Date.now()); // Set Session
-          $('lockScreen').style.display = 'none';
-      } else {
-          alert("Wrong PIN! Try again.");
-          $('pinInput').value = '';
-      }
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW Error', err)); });
   }
 
-  function openSettings() { $('settingsOv').style.display = 'flex'; }
-  function changePin() {
-      const newP = $('newPin').value;
-      if(newP && newP.length >= 4) {
-          localStorage.setItem(PIN_KEY, newP); alert("PIN Changed!"); $('newPin').value = '';
-      } else { alert("Enter at least 4 digits"); }
+  function toggleMenu() {
+      const m = $('dropdownMenu'); const b = $('menuBackdrop');
+      if (m.style.display === 'block') { m.style.display = 'none'; b.style.display = 'none'; } 
+      else { m.style.display = 'block'; b.style.display = 'block'; }
   }
 
-  // --- BACKUP & RESTORE ---
+  function switchPage(page) {
+      currentPage = page;
+      if(page === 'dashboard') showStickyDash = true; else showStickyDash = false;
+      toggleMenu(); render(); window.scrollTo(0,0);
+  }
+
+  function handleFooterClick(type) {
+      currentPage = 'all_list'; 
+      currentFilter = type === 'all' && currentFilter === 'all' ? 'all' : type;
+      showStickyDash = true; 
+      document.querySelectorAll('.f-item').forEach(b=>b.classList.remove('active')); 
+      const m={paid:1,unpaid:2,due:3}; 
+      if(m[type]) document.querySelectorAll('.f-item')[m[type]].classList.add('active'); 
+      else document.querySelectorAll('.f-item')[0].classList.add('active'); 
+      render(); window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function openSettings() { $('settingsOv').style.display = 'flex'; $('adminSettingsPanel').style.display = 'block'; }
+  // --- LOGS & DATA ---
+  function addLog(msg, amountStr) {
+      const time = new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit', timeZone: "Asia/Dhaka"});
+      const newLog = { msg, amount: amountStr, time: time, created_at: new Date().toISOString() };
+      persistentLogs.unshift(newLog);
+      if(persistentLogs.length > 100) persistentLogs.pop();
+      enqueue({ type: 'insertLog', data: newLog });
+      saveData(true); renderLogs();
+  }
+
+  function renderLogs() {
+      const list = $('recentList'); list.innerHTML = '';
+      if(persistentLogs.length === 0) { list.innerHTML = '<div style="padding:10px;text-align:center;color:#999;font-size:12px;">No recent updates</div>'; return; }
+      persistentLogs.forEach(log => {
+          const d = new Date(log.created_at);
+          const dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: "Asia/Dhaka" });
+          list.innerHTML += `
+          <div class="log-item">
+            <div><div style="font-weight:bold;">${log.msg}</div><div style="font-size:10px; color:#64748b;">${dateStr}, ${log.time}</div></div>
+            ${log.amount ? `<div class="log-amount">${log.amount}</div>` : ''}
+          </div>`;
+      });
+  }
+  function clearLogs() { if(confirm("Clear LOCAL history only?")) { persistentLogs = []; saveData(); } }
+
+  function scrollToTopList() {
+      const list = $('list');
+      const offset = showStickyDash ? 280 : 100;
+      const topPos = list.getBoundingClientRect().top + window.scrollY - offset;
+      window.scrollTo({ top: topPos, behavior: 'smooth' });
+  }
+
   function backupData() {
-      const data = { users, expenses, archives };
+      const data = { users, expenses, archives, persistentLogs };
       const blob = new Blob([JSON.stringify(data)], {type: "application/json"});
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href = url; a.download = "WiFi_Backup_" + getTodayStr() + ".json"; a.click();
@@ -382,12 +576,13 @@
       reader.onload = function(e) {
           try {
               const d = JSON.parse(e.target.result);
-              if(d.users) { users = d.users; expenses = d.expenses || []; archives = d.archives || []; saveData(); alert("Data Restored!"); location.reload(); } 
+              if(d.users) { users = d.users; expenses = d.expenses || []; archives = d.archives || []; persistentLogs = d.persistentLogs || []; saveData(); alert("Data Restored!"); location.reload(); } 
               else { alert("Invalid File"); }
           } catch(err) { alert("Error reading file"); }
       }; reader.readAsText(file);
   }
 
+  // --- SUPABASE SYNC ---
   async function sbFetch(path, options = {}) {
     const url = `${SUPABASE_URL}/rest/v1/${path}`;
     const headers = { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=representation' };
@@ -398,11 +593,11 @@
 
   function getQueue() { try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); } catch { return []; } }
   function setQueue(q) { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); }
-  function enqueue(op) { const q = getQueue(); q.push({ ...op, ts: Date.now() }); setQueue(q); updateStatus('Pending Sync...', true); }
+  function enqueue(op) { const q = getQueue(); q.push({ ...op, ts: Date.now() }); setQueue(q); updateStatus('Pending...', true); }
   
   async function flushSyncQueue() {
     const q = getQueue(); if (q.length === 0) return;
-    updateStatus(`Syncing ${q.length} items...`, true);
+    updateStatus(`Syncing ${q.length}...`, true);
     let successCount = 0; const failedOps = [];
     for (const op of q) {
       try {
@@ -411,6 +606,7 @@
         else if (op.type === 'upsertExpense') await sbFetch('expenses', { method: 'POST', body: JSON.stringify({ ...op.data, updated_at: new Date().toISOString() }), headers: { 'Prefer': 'resolution=merge-duplicates' } });
         else if (op.type === 'deleteExpense') await sbFetch(`expenses?id=eq.${encodeURIComponent(op.id)}`, { method: 'DELETE' });
         else if (op.type === 'upsertArchive') await sbFetch('archives', { method: 'POST', body: JSON.stringify(op.data) });
+        else if (op.type === 'insertLog') await sbFetch('logs', { method: 'POST', body: JSON.stringify(op.data) });
         successCount++;
       } catch (e) { failedOps.push(op); }
     }
@@ -420,25 +616,25 @@
   }
 
   function init() {
-    checkSession(); // CHECK LOCK SCREEN FIRST
-    const now = new Date();
-    currentActiveMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const nowStr = getTodayStr(); 
+    currentActiveMonthStr = nowStr.substring(0, 7); 
     $('monthInput').value = currentActiveMonthStr;
-    $('todayDate').innerText = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-    loadFromLocal(); render(); setTimeout(fetchData, 1500); 
-  }
-
-  function loadFromLocal() {
-      const local = localStorage.getItem(DB_KEY);
-      if(local) { const d = JSON.parse(local); users = d.users || []; expenses = d.expenses || []; archives = d.archives || []; } 
-      else if(!localStorage.getItem('first_run_done_v2')) localStorage.setItem('first_run_done_v2', 'true');
+    $('todayDate').innerText = nowStr.split('-').reverse().join('-');
+    showStickyDash = true; 
+    const local = localStorage.getItem(DB_KEY);
+    if(local) { const d = JSON.parse(local); users = d.users || []; expenses = d.expenses || []; archives = d.archives || []; persistentLogs = d.persistentLogs || []; }
+    document.body.classList.add('admin-mode');
+    render(); 
+    setTimeout(fetchData, 1500); 
   }
 
   async function fetchData() {
     if (getQueue().length > 0) { await flushSyncQueue(); if (getQueue().length > 0) { updateStatus('Offline (Queue Active)', false); return; } }
     updateStatus('Syncing...', true);
     try {
-      const [remoteUsers, remoteExpenses, remoteArchives] = await Promise.all([ sbFetch('users?select=*'), sbFetch('expenses?select=*'), sbFetch('archives?select=*') ]);
+      const [remoteUsers, remoteExpenses, remoteArchives, remoteLogs] = await Promise.all([ 
+          sbFetch('users?select=*'), sbFetch('expenses?select=*'), sbFetch('archives?select=*'), sbFetch('logs?select=*&order=created_at.desc&limit=50')
+      ]);
       if (remoteUsers) {
              const rMap = new Map(remoteUsers.map(r => [String(r.id), r]));
              users = users.map(u => { const r = rMap.get(u.id); return r ? { ...u, conn: r.conn, pay: r.pay, due: r.due, prevDue: r.prev_due, expDate: r.exp_date || u.expDate, bill: r.bill, area: r.area || u.area } : u; });
@@ -446,97 +642,194 @@
       }
       if (remoteExpenses) expenses = remoteExpenses.map(r => ({ id: String(r.id), desc: r.desc, amnt: Number(r.amnt) || 0, date: r.date || null }));
       if (remoteArchives) archives = remoteArchives.map(r => ({ id: String(r.id), name: r.name, data: r.data }));
-      localStorage.setItem(DB_KEY, JSON.stringify({ users, expenses, archives }));
-      render(); updateStatus('Online', false);
-    } catch (e) { updateStatus('Offline Mode', false); }
+      if (remoteLogs) persistentLogs = remoteLogs.map(r => ({ msg: r.msg, amount: r.amount, time: r.time, created_at: r.created_at }));
+      saveData(); updateStatus('Online', false);
+    } catch (e) { updateStatus('Offline Mode', false); console.log(e); }
   }
 
   function saveData(silent = false) {
-    localStorage.setItem(DB_KEY, JSON.stringify({ users, expenses, archives }));
+    localStorage.setItem(DB_KEY, JSON.stringify({ users, expenses, archives, persistentLogs }));
     if(!silent) render();
     if(navigator.onLine) flushSyncQueue();
   }
-
   function updateStatus(msg, spin) {
-      const el = $('syncStatus'); el.style.display = 'inline-block';
+      const el = $('syncStatus'); 
       el.innerHTML = spin ? `<i class="fas fa-circle-notch fa-spin"></i> ${msg}` : `<i class="fas fa-check"></i> ${msg}`;
       el.style.background = (msg.includes('Offline') || msg.includes('Pending')) ? '#dc2626' : 'rgba(255,255,255,0.2)';
   }
-
   async function forceSave() { updateStatus('Saving...', true); saveData(true); await flushSyncQueue(); await fetchData(); }
 
-  // --- CORE LOGIC ---
-  function updPay(id, v) { 
-      if(viewMode) return; const u = users.find(x=>x.id==id); u.pay = v; 
-      if(v === 'Paid') { u.conn = 'Active'; u.payDate = getTodayStr(); const d = new Date(); d.setMonth(d.getMonth() + 1); d.setDate(4); u.expDate = d.toISOString().split('T')[0]; } 
-      else { u.payDate = null; u.conn = u.conn === 'Free' ? 'Free' : 'Active'; }
-      enqueue({ type: 'updateUser', id, data: { pay: u.pay, conn: u.conn, pay_date: u.payDate, exp_date: u.expDate } }); saveData(); 
-  }
-  function updConn(id, v) { if(viewMode) return; const u = users.find(x=>x.id==id); u.conn = v; enqueue({ type: 'updateUser', id, data: { conn: v } }); saveData(); }
-  function updDue(id, v) { if(viewMode) return; const u = users.find(x=>x.id==id); u.due = Number(v); enqueue({ type: 'updateUser', id, data: { due: u.due } }); saveData(); }
+  // --- ACTIONS ---
+  function updPay(id, v) { const u = users.find(x=>x.id==id); let collectedAmt = 0; if(v === 'Paid') { collectedAmt = (Number(u.bill) || 0) + (Number(u.prevDue) || 0) - (Number(u.due) || 0); u.conn = 'Active'; u.payDate = getTodayStr(); const d = new Date(); d.setMonth(d.getMonth() + 1); d.setDate(4); u.expDate = d.toISOString().split('T')[0]; addLog(`${u.name}: Paid Bill`, `+${collectedAmt}tk`); } else { u.payDate = null; u.conn = u.conn === 'Free' ? 'Free' : 'Active'; addLog(`${u.name}: Marked Unpaid`, null); } u.pay = v; enqueue({ type: 'updateUser', id, data: { pay: u.pay, conn: u.conn, pay_date: u.payDate, exp_date: u.expDate } }); saveData(); }
+  function updConn(id, v) { const u = users.find(x=>x.id==id); u.conn = v; addLog(`${u.name}: Status ${v}`, null); enqueue({ type: 'updateUser', id, data: { conn: v } }); saveData(); }
+  function updDue(id, v) { const u = users.find(x=>x.id==id); const oldDue = Number(u.due) || 0; const newDue = Number(v) || 0; u.due = newDue; if(oldDue > newDue) { const paid = oldDue - newDue; addLog(`${u.name}: Due Payment`, `+${paid}tk`); } else { addLog(`${u.name}: Due Updated`, `Due: ${newDue}tk`); } enqueue({ type: 'updateUser', id, data: { due: u.due } }); saveData(); }
 
+  // --- RENDER FUNCTION ---
   function render() {
-    const list = $('list'); const term = ($('search').value || '').toLowerCase(); const filterArea = $('filterArea').value;
-    list.innerHTML = '';
-    
+    const list = $('list'); list.innerHTML = '';
+
+    // A. Handle Activity Page (NEW LOGIC)
+    if (currentPage === 'activity') {
+        $('sec_filter').style.display = 'none';
+        $('clientSection').style.display = 'none'; 
+        $('chartSection').style.display = 'none';
+        $('sec_today').style.display = 'none'; 
+        $('scrollableTop').style.display = 'block';
+        $('sec_recent').style.display = 'block'; 
+        $('pageHeader').style.display = 'block';
+        $('sec_dash').style.display = 'none';
+        
+        $('phTitle').innerText = "ACTIVITY REPORT"; 
+        $('phVal').innerText = "Last 2 Days";
+        
+        const actSection = $('activityCompSection');
+        actSection.style.display = 'block';
+
+        const tStr = getTodayStr();
+        const yStr = getYesterdayStr();
+        const t = getStatsForDate(tStr);
+        const y = getStatsForDate(yStr);
+
+        actSection.innerHTML = `
+        <div class="act-card">
+            <div class="act-head head-today">
+                <span><i class="fas fa-calendar-day"></i> TODAY</span>
+                <span>${tStr.split('-')[2]}/${tStr.split('-')[1]}</span>
+            </div>
+            <div class="act-body">
+                <div class="act-item"><div class="act-val c-green">${t.coll}</div><div class="act-lbl">Collected</div></div>
+                <div class="act-item"><div class="act-val c-red">${t.exp}</div><div class="act-lbl">Expense</div></div>
+                <div class="act-item"><div class="act-val c-blue">${t.coll - t.exp}</div><div class="act-lbl">Profit</div></div>
+            </div>
+            <div class="act-footer"><i class="fas fa-check-circle"></i> <b>${t.paidCount}</b> Lines Paid Today</div>
+        </div>
+        <div class="act-card">
+            <div class="act-head head-yest">
+                <span><i class="fas fa-history"></i> YESTERDAY</span>
+                <span>${yStr.split('-')[2]}/${yStr.split('-')[1]}</span>
+            </div>
+            <div class="act-body">
+                <div class="act-item"><div class="act-val c-green">${y.coll}</div><div class="act-lbl">Collected</div></div>
+                <div class="act-item"><div class="act-val c-red">${y.exp}</div><div class="act-lbl">Expense</div></div>
+                <div class="act-item"><div class="act-val c-blue">${y.coll - y.exp}</div><div class="act-lbl">Profit</div></div>
+            </div>
+            <div class="act-footer"><i class="fas fa-check-circle"></i> <b>${y.paidCount}</b> Lines Paid Yesterday</div>
+        </div>`;
+        renderLogs();
+        return; 
+    } else {
+        // Hide Activity Section
+        $('activityCompSection').style.display = 'none';
+        if(currentPage !== 'dashboard') $('sec_recent').style.display = 'none'; else $('sec_recent').style.display = 'block';
+        $('sec_today').style.display = 'block';
+    }
+
+    // B. Handle Sticky Dash/Header
+    if (showStickyDash) {
+        $('sec_dash').style.display = 'block';
+        $('pageHeader').style.display = 'none';
+        $('scrollableTop').style.display = 'block'; 
+    } else {
+        $('sec_dash').style.display = 'none';
+        $('pageHeader').style.display = 'block';
+        $('scrollableTop').style.display = 'none'; 
+    }
+
+    if(currentPage === 'dashboard') {
+        $('sec_filter').style.display = 'none';
+        $('clientSection').style.display = 'none';
+        $('chartSection').style.display = 'block'; 
+    } else {
+        $('sec_filter').style.display = 'block'; 
+        $('clientSection').style.display = 'block'; 
+        $('chartSection').style.display = 'none';
+    }
+
+    // C. General Stats Calculation
+    const todayStr = getTodayStr(); 
     let st = {act:0, paid:0, unpaid:0, exp:0, free:0, coll:0, totalDue:0, prevDueTotal:0};
-    let tColl=0, tExp=0; const todayStr = getTodayStr();
+    let tColl=0, tExp=0;
     
-    const sorted = [...users].sort((a,b) => {
-        const w = u => (u.conn==='Active'&&u.pay==='Unpaid')?4 : (u.due>0)?3 : (u.prevDue>0)?2 : (u.conn==='Expired')?1 : 0;
-        return (w(b) - w(a)) || a.name.localeCompare(b.name);
+    users.forEach(u => {
+        const bill = Number(u.bill)||0, due = Number(u.due)||0, prev = Number(u.prevDue)||0;
+        let collected = 0;
+        if(u.conn === 'Free') { st.free++; st.act++; } 
+        else if(u.conn === 'Expired' || u.conn === 'Inactive') { st.exp++; st.prevDueTotal += prev; } 
+        else {
+            st.act++; st.totalDue += due; st.prevDueTotal += prev;
+            if(u.pay === 'Paid') st.paid++; else st.unpaid++;
+            if(due > 0) collected = bill - due; else if(u.pay === 'Paid') collected = bill;
+            st.coll += collected; 
+            if(u.payDate === todayStr) tColl += collected;
+        }
     });
+
+    const expenseTotal = expenses.reduce((a,b)=>a+(Number(b.amnt)||0),0);
+    tExp = expenses.filter(e => e.date === todayStr).reduce((a,b)=>a+(Number(b.amnt)||0),0);
+
+    $('vAct').innerText = st.act; $('vPaid').innerText = st.paid; $('vUnpaid').innerText = st.unpaid; 
+    $('vExp').innerText = st.exp; $('vCurrDue').innerText = st.totalDue + '৳'; 
+    $('vPrevDueTotal').innerText = st.prevDueTotal + '৳'; $('vColl').innerText = st.coll + '৳';
+    $('vExpense').innerText = expenseTotal + '৳'; $('vNet').innerText = (st.coll - expenseTotal) + '৳';
+    $('tColl').innerText = tColl; $('tExp').innerText = tExp; $('tNet').innerText = (tColl - tExp);
+
+    if(currentPage === 'dashboard') {
+        const ctx = $('myChart').getContext('2d'); if(myChartInstance) myChartInstance.destroy(); 
+        myChartInstance = new Chart(ctx, { type: 'doughnut', data: { labels: ['Paid', 'Unpaid', 'Expired', 'Free'], datasets: [{ data: [st.paid, st.unpaid, st.exp, st.free], backgroundColor: ['#16a34a', '#d97706', '#dc2626', '#06b6d4'], borderWidth: 1 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 15 } } } } });
+        return; 
+    }
+
+    // D. List Headers
+    if(currentPage === 'active_line') { $('phTitle').innerText = "TOTAL ACTIVE"; $('phVal').innerText = st.act; }
+    if(currentPage === 'paid_line') { $('phTitle').innerText = "TOTAL PAID"; $('phVal').innerText = st.paid; }
+    if(currentPage === 'unpaid_line') { $('phTitle').innerText = "TOTAL UNPAID"; $('phVal').innerText = st.unpaid; }
+    if(currentPage === 'expired_line') { $('phTitle').innerText = "TOTAL EXPIRED"; $('phVal').innerText = st.exp; }
+    if(currentPage === 'all_list') { $('phTitle').innerText = "ALL CLIENTS"; $('phVal').innerText = users.length; }
+
+    const sorted = [...users].sort((a,b) => {
+        if (a.pay === 'Paid' && b.pay !== 'Paid') return 1; if (a.pay !== 'Paid' && b.pay === 'Paid') return -1;
+        return a.name.localeCompare(b.name);
+    });
+
+    const term = ($('search').value || '').toLowerCase(); 
+    const filterArea = $('filterArea').value;
 
     sorted.forEach(u => {
       if(filterArea !== 'all' && u.area !== filterArea) return;
-      const bill = Number(u.bill)||0, due = Number(u.due)||0, prev = Number(u.prevDue)||0;
-      let collected = 0;
-
-      if(u.conn === 'Free') { st.free++; st.act++; } 
-      else if(u.conn === 'Expired') { st.exp++; st.prevDueTotal += prev; } 
-      else {
-          st.act++; st.totalDue += due; st.prevDueTotal += prev;
-          if(u.pay === 'Paid') st.paid++; else st.unpaid++;
-          if(due > 0) collected = bill - due; else if(u.pay === 'Paid') collected = bill;
-          st.coll += collected; if(u.payDate === todayStr) tColl += collected;
-      }
-
       const searchText = (u.name + u.mob + u.user + u.id + (u.area||'')).toLowerCase();
       if(!searchText.includes(term)) return;
-      if(currentFilter === 'paid' && (u.conn !== 'Active' || u.pay !== 'Paid')) return;
-      if(currentFilter === 'unpaid' && (u.conn !== 'Active' || u.pay !== 'Unpaid')) return;
-      if(currentFilter === 'due' && u.due <= 0 && u.prevDue <= 0) return;
 
+      let showUser = false;
+      if (currentPage === 'all_list') {
+          if(currentFilter === 'all') { if(u.conn === 'Active' && u.pay === 'Paid') return; } 
+          if(currentFilter === 'paid' && (u.conn !== 'Active' || u.pay !== 'Paid')) return;
+          if(currentFilter === 'unpaid' && (u.conn !== 'Active' || u.pay !== 'Unpaid')) return;
+          if(currentFilter === 'due' && u.due <= 0 && u.prevDue <= 0) return;
+          showUser = true;
+      } 
+      else if (currentPage === 'active_line') { if (u.conn === 'Active' || u.conn === 'Free') showUser = true; }
+      else if (currentPage === 'paid_line') { if (u.conn === 'Active' && u.pay === 'Paid') showUser = true; }
+      else if (currentPage === 'unpaid_line') { if (u.conn === 'Active' && u.pay !== 'Paid') showUser = true; }
+      else if (currentPage === 'expired_line') { if (u.conn === 'Expired') showUser = true; }
+
+      if (!showUser) return;
+
+      const bill = Number(u.bill)||0, due = Number(u.due)||0, prev = Number(u.prevDue)||0;
       let cardClass = 'client-card', badge = '';
       if(u.conn === 'Free') { cardClass += ' card-free'; badge = '<span style="background:#ccfbf1; color:#0f766e; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:bold;">Free</span>'; }
+      else if(u.conn === 'Inactive') { cardClass += ' card-inactive'; badge = '<span style="background:#ffe4e6; color:#be123c; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:bold;">Inactive</span>'; }
       else if(u.conn === 'Expired') { cardClass += ' card-exp'; badge = '<span style="background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:bold;">Expired</span>'; }
       else if(u.pay === 'Paid') { cardClass += ' card-paid'; badge = due > 0 ? '<span style="background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:bold;">Partial Paid</span>' : '<span style="background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:bold;">Paid Full</span>'; }
       else { cardClass += ' card-due'; badge = '<span style="background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:bold;">Due Bill</span>'; }
 
-      const controls = viewMode ? '' : `
-        <div style="background:#f8fafc; padding:8px; border-radius:6px; display:flex; gap:5px; margin-bottom:10px; align-items:center;">
-            <select class="wap-sel" style="flex:1; height:32px; padding:0 5px;" onchange="updConn('${u.id}', this.value)">
-                <option ${u.conn==='Active'?'selected':''}>Active</option>
-                <option ${u.conn==='Expired'?'selected':''}>Expired</option>
-                <option ${u.conn==='Free'?'selected':''}>Free</option>
-            </select>
-            ${u.conn === 'Active' ? `
-            <select class="wap-sel" style="flex:1; height:32px; padding:0 5px;" onchange="updPay('${u.id}', this.value)">
-                <option ${u.pay==='Unpaid'?'selected':''}>Unpaid</option>
-                <option ${u.pay==='Paid'?'selected':''}>Paid</option>
-            </select>
-            <input class="wap-inp" type="number" value="${u.due}" onchange="updDue('${u.id}',this.value)" placeholder="Due" style="width:50px; height:32px; padding:0 5px; text-align:center; color:red; font-weight:bold;">
-            ` : ''}
-        </div>`;
-
       const prevDueHtml = u.prevDue > 0 ? `<div class="prev-due-box">⚠️ আগের বাকি: ${u.prevDue}৳</div>` : '';
-      const areaBadge = u.area ? `<span style="font-size:11px; color:#3b5998; background:#e0f2fe; padding:2px 5px; border-radius:4px; margin-left:5px;">${u.area}</span>` : '';
-      const expDateHtml = u.expDate ? `<div style="color:#666; font-size:12px; margin-top:5px; padding-top:2px; border-top:1px dashed #ddd;"><i class="fas fa-calendar-alt" style="color:#ef4444;"></i> Exp: <b>${u.expDate}</b></div>` : '';
-
+      const areaBadge = u.area ? `<span style="font-size:10px; color:#3b5998; background:#e0f2fe; padding:1px 4px; border-radius:4px; margin-left:5px;">${u.area}</span>` : '';
+      const expDateHtml = u.expDate ? `<div style="color:#666; font-size:11px; margin-top:3px; padding-top:2px; border-top:1px dashed #ddd;"><i class="fas fa-calendar-alt" style="color:#ef4444;"></i> Exp: <b>${u.expDate}</b></div>` : '';
+      
       list.insertAdjacentHTML('beforeend', `
-      <div class="${cardClass}">
+      <div class="${cardClass}" onclick="openManageModal('${u.id}')" style="cursor:pointer;">
         <div class="card-header">
-            <div><div class="c-name">${u.name} ${u.prevDue>0?'<span style="color:red;font-size:11px;">(বাকি)</span>':''}</div><small style="color:#666">${u.user} ${areaBadge}</small></div>
+            <div><div class="c-name">${u.name} ${u.prevDue>0?'<span style="color:red;font-size:10px;">(বাকি)</span>':''}</div><small style="color:#666">${u.user} ${areaBadge}</small></div>
             ${badge}
         </div>
         <div class="card-body">
@@ -545,8 +838,7 @@
             <div style="grid-column: span 2;">${expDateHtml}</div>
             ${prevDueHtml}
         </div>
-        ${controls}
-        <div class="card-actions">
+        <div class="card-actions" onclick="event.stopPropagation()">
             <button class="btn-icon btn-call" onclick="window.location.href='tel:${u.mob}'"><i class="fas fa-phone"></i></button>
             <button class="btn-icon btn-wa" onclick="wa('${u.mob}', '${u.pay}', ${u.due}, ${u.prevDue})"><i class="fab fa-whatsapp"></i></button>
             <button class="btn-icon btn-bill" onclick="printInvoice('${u.id}')"><i class="fas fa-print"></i></button>
@@ -555,85 +847,78 @@
         </div>
       </div>`);
     });
-
-    const expenseTotal = expenses.reduce((a,b)=>a+(Number(b.amnt)||0),0);
-    tExp = expenses.filter(e => e.date && e.date === getTodayStr()).reduce((a,b)=>a+(Number(b.amnt)||0),0);
-
-    $('vAct').innerText = st.act; $('vPaid').innerText = st.paid; $('vUnpaid').innerText = st.unpaid; 
-    $('vExp').innerText = st.exp; $('vCurrDue').innerText = st.totalDue + '৳'; 
-    $('vPrevDueTotal').innerText = st.prevDueTotal + '৳'; $('vColl').innerText = st.coll + '৳';
-    $('vExpense').innerText = expenseTotal + '৳'; $('vNet').innerText = (st.coll - expenseTotal) + '৳';
-    $('tColl').innerText = tColl; $('tExp').innerText = tExp; $('tNet').innerText = (tColl - tExp);
-
-    renderCharts(st.paid, st.unpaid, st.free, st.coll, expenseTotal);
   }
 
-  function openHistory(id) {
-      const u = users.find(x => x.id == id);
-      $('historyName').innerText = u.name + " (" + u.user + ")";
-      const tbody = $('historyList'); tbody.innerHTML = '';
-      let rows = `<tr><td>Current</td><td>${u.bill}</td><td style="color:${u.due>0?'red':'green'}">${u.due}</td><td>${u.conn}</td></tr>`;
-      archives.slice().reverse().forEach(arc => {
-          const oldU = arc.data.users.find(x => x.id == id);
-          if (oldU) {
-              const paySt = oldU.due > 0 ? 'Due' : (oldU.pay === 'Paid' ? 'Paid' : 'Unpaid');
-              rows += `<tr><td>${arc.name}</td><td>${oldU.bill}</td><td style="color:${oldU.due>0?'red':'green'}">${oldU.due}</td><td>${paySt}</td></tr>`;
-          }
-      });
-      tbody.innerHTML = rows;
-      $('historyOv').style.display = 'flex';
-  }
-
-  function exportExcel() {
-      const data = users.map(u => ({ Name: u.name, UserID: u.user, Mobile: u.mob, Area: u.area, Package: u.pkg, Bill: u.bill, Paid: (u.pay==='Paid'?'Yes':'No'), Due: u.due, PrevDue: u.prevDue, TotalDue: (Number(u.due)+Number(u.prevDue)) }));
-      const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "WiFi Clients"); XLSX.writeFile(wb, "WiFi_Manager_Report.xlsx");
-  }
-
-  function openBulkModal() {
-      const tbody = $('bulkList'); tbody.innerHTML = '';
-      const dues = users.filter(u => (u.due > 0 || u.prevDue > 0) && u.conn !== 'Free');
-      if(dues.length === 0) tbody.innerHTML = '<tr><td colspan="3">No Dues Found</td></tr>';
-      dues.forEach(u => {
-          const total = Number(u.due) + Number(u.prevDue);
-          let n = u.mob.replace(/\D/g,''); if(n.length<=11) n='88'+n;
-          const msg = `প্রিয় গ্রাহক ${u.name}, আপনার ইন্টারনেট বিল বাবদ মোট ${total} টাকা বকেয়া আছে। অনুগ্রহ করে পরিশোধ করুন। ধন্যবাদ।`;
-          const link = `https://wa.me/${n}?text=${encodeURIComponent(msg)}`;
-          tbody.innerHTML += `<tr><td>${u.name}<br><small>${u.user}</small></td><td style="color:red; font-weight:bold;">${total}</td><td><a href="${link}" target="_blank" style="text-decoration:none; background:#25D366; color:white; padding:4px 8px; border-radius:4px; font-size:11px;">Send</a></td></tr>`;
-      });
-      $('bulkOv').style.display = 'flex';
-  }
-
-  function renderCharts(paid, unpaid, free, coll, exp) {
-    if (stChart) stChart.destroy(); if (fnChart) fnChart.destroy();
-    stChart = new Chart($('statusChart'), { type: 'doughnut', data: { labels: ['Paid', 'Unpaid', 'Free'], datasets: [{ data: [paid, unpaid, free], backgroundColor: ['#16a34a', '#f59e0b', '#06b6d4'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
-    fnChart = new Chart($('financeChart'), { type: 'bar', data: { labels: ['Income', 'Expense'], datasets: [{ label: 'Amount', data: [coll, exp], backgroundColor: ['#3b5998', '#ef4444'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
-  }
-
-  function wa(mob, pay, due, prev) { 
-      let n=mob.replace(/\D/g,''); if(n.length<=11) n='88'+n; 
-      let msg = ""; if(prev > 0) msg += `গত মাসের বকেয়া: ${prev} টাকা। `; if(due > 0) msg += `এই মাসের বিল: ${due} টাকা। `;
-      if(msg === "") msg = (pay==='Unpaid'?`বিল পরিশোধ করুন।`:`ধন্যবাদ!`); else msg += ` মোট পরিশোধ করুন: ${Number(due)+Number(prev)} টাকা।`;
-      window.open(`https://wa.me/${n}?text=${encodeURIComponent(msg)}`); 
-  }
-  function printInvoice(id) {
-    const u = users.find(x => x.id == id); if(!u) return;
-    $('inv_name').innerText = u.name; $('inv_id').innerText = u.user||'N/A'; $('inv_mob').innerText = u.mob; $('inv_area').innerText = u.area||'N/A';
-    $('inv_pkg').innerText = u.pkg; $('inv_date').innerText = getTodayStr(); $('inv_bill').innerText = u.bill + ' Tk'; $('inv_prev').innerText = u.prevDue + ' Tk';
-    $('inv_total').innerText = (Number(u.bill)+Number(u.prevDue)) + ' Tk';
-    window.print();
-  }
-  function setFilter(type) { if(currentFilter===type && type!=='all') currentFilter='all'; else currentFilter=type; document.querySelectorAll('.f-item').forEach(b=>b.classList.remove('active')); const m={paid:1,unpaid:2,due:3}; if(m[type]) document.querySelectorAll('.f-item')[m[type]].classList.add('active'); else document.querySelectorAll('.f-item')[0].classList.add('active'); render(); }
-  function openExpModal() { if(viewMode)return; $('ex_reason').value=''; $('ex_amount').value=''; renderExpList(); $('expOv').style.display='flex'; }
-  function saveExpense() { const r=$('ex_reason').value, a=Number($('ex_amount').value); if(!r||!a) return alert("Enter details"); const d = getTodayStr(), id = Date.now().toString(); expenses.push({id, desc:r, amnt:a, date:d}); enqueue({ type: 'upsertExpense', data: { id, desc:r, amnt:a, date:d } }); saveData(); $('ex_reason').value=''; $('ex_amount').value=''; renderExpList(); }
-  function renderExpList() { const l=$('expList'); l.innerHTML=''; [...expenses].reverse().forEach((e,i)=>{ l.innerHTML+=`<div style="border-bottom:1px solid #eee; padding:5px;"><b>${e.desc}</b>: ${e.amnt}tk <small>${e.date}</small> <i class="fas fa-trash" style="color:red;float:right;cursor:pointer;" onclick="delExp(${expenses.length-1-i})"></i></div>`; }); }
-  function delExp(i) { if(!viewMode && confirm('Delete?')) { const e = expenses[i]; if(e && e.id) enqueue({ type: 'deleteExpense', id: e.id }); expenses.splice(i,1); saveData(); renderExpList(); } }
+  function openExpModal() { $('ex_reason').value=''; $('ex_amount').value=''; renderExpList(); $('expOv').style.display='flex'; }
+  function saveExpense() { const r=$('ex_reason').value, a=Number($('ex_amount').value); if(!r||!a) return alert("Enter details"); const d = getTodayStr(), id = Date.now().toString(); expenses.push({id, desc:r, amnt:a, date:d}); enqueue({ type: 'upsertExpense', data: { id, desc:r, amnt:a, date:d } }); saveData(); addLog(`Exp: ${r}`, `-${a}tk`); $('ex_reason').value=''; $('ex_amount').value=''; renderExpList(); }
+  function renderExpList() { const l=$('expList'); l.innerHTML=''; if(expenses.length === 0) l.innerHTML = '<div style="padding:10px;text-align:center;color:#999;">No expenses found</div>'; [...expenses].reverse().forEach((e,i)=>{ const delBtn = `<i class="fas fa-trash" style="color:red;float:right;cursor:pointer;" onclick="delExp(${expenses.length-1-i})"></i>`; l.innerHTML+=`<div style="border-bottom:1px solid #eee; padding:5px;"><b>${e.desc}</b>: ${e.amnt}tk <small>${e.date}</small> ${delBtn}</div>`; }); }
+  function delExp(i) { if(confirm('Delete?')) { const e = expenses[i]; if(e && e.id) enqueue({ type: 'deleteExpense', id: e.id }); expenses.splice(i,1); saveData(); renderExpList(); } }
+  
   let editId = null;
-  function openModal() { if(viewMode)return; editId=null; $('m_name').value=''; $('m_area').value=''; $('m_mob').value=''; $('m_bill').value=''; $('m_user').value=''; $('m_prevDue').value=''; $('m_expDate').value=''; $('modalOv').style.display='flex'; }
+  function openModal() { editId=null; $('m_name').value=''; $('m_area').value=''; $('m_mob').value=''; $('m_bill').value=''; $('m_user').value=''; $('m_prevDue').value=''; $('m_expDate').value=''; $('modalOv').style.display='flex'; }
   function setBill() { $('m_bill').value = pkgRates[$('m_pkg').value]; }
-  function edit(id) { if(viewMode)return; editId=id; const u=users.find(x=>x.id==id); $('m_name').value=u.name; $('m_mob').value=u.mob; $('m_pkg').value=u.pkg; $('m_bill').value=u.bill; $('m_user').value=u.user||''; $('m_area').value=u.area || ''; $('m_prevDue').value = u.prevDue || 0; $('m_expDate').value = u.expDate || ''; $('modalOv').style.display='flex'; }
-  function saveUser() { if(viewMode) return; const d = { name: $('m_name').value, mob: $('m_mob').value, pkg: $('m_pkg').value, user: $('m_user').value, bill: Number($('m_bill').value), prevDue: Number($('m_prevDue').value), area: $('m_area').value, expDate: $('m_expDate').value }; if(!d.name) return alert("Name required"); if(editId) { const idx = users.findIndex(x=>x.id==editId); users[idx] = {...users[idx], ...d}; enqueue({ type: 'updateUser', id: editId, data: { name: d.name, mob: d.mob, pkg: d.pkg, user_id: d.user || null, bill: d.bill, prev_due: d.prevDue, area: d.area, exp_date: d.expDate }}); } else { const id = Date.now().toString(); users.unshift({...d, id, conn:'Active', pay:'Unpaid', due:0, prevDue:d.prevDue||0, payDate:null}); enqueue({ type: 'upsertUser', data: { id, name: d.name, mob: d.mob, pkg: d.pkg, user_id: d.user || null, bill: d.bill, conn: 'Active', pay: 'Unpaid', due: 0, prev_due: d.prevDue || 0, pay_date: null, area: d.area, exp_date: d.expDate }}); } $('modalOv').style.display='none'; saveData(); }
-  function archiveAndReset() { if(viewMode) return alert("Switch to current month first"); const confirmName = prompt("Start new month? Due will move to 'Prev Due'.\nEnter Name:", $('monthInput').value); if(!confirmName) return; const snapshot = { users: JSON.parse(JSON.stringify(users)), expenses: JSON.parse(JSON.stringify(expenses)) }; const archiveId = Date.now().toString(); archives.push({ id: archiveId, name: confirmName, data: snapshot }); enqueue({ type: 'upsertArchive', data: { id: archiveId, name: confirmName, data: snapshot } }); users.forEach(u => { if(u.conn !== 'Free') { const oldPrev = Number(u.prevDue)||0, currentDue = Number(u.due)||0; u.prevDue = oldPrev + currentDue; u.conn = 'Expired'; u.pay = 'Unpaid'; u.payDate = null; u.due = 0; enqueue({ type: 'updateUser', id: u.id, data: { prev_due: u.prevDue, conn: 'Expired', pay: 'Unpaid', pay_date: null, due: 0 } }); } }); expenses = []; saveData(); alert("New Month Started!"); }
-  function handleMonthChange(val) { if(!val) return; if(val === currentActiveMonthStr) { viewMode = false; $('viewStatus').innerText = "⚡ Live Data (Auto Sync On)"; $('viewStatus').style.background = "#f0fdf4"; $('viewStatus').style.color = "#16a34a"; fetchData(); return; } const arc = archives.find(a => a.name === val); if(arc) { viewMode = true; $('viewStatus').innerText = "🔒 Viewing History: " + val; $('viewStatus').style.background = "#fffbeb"; $('viewStatus').style.color = "#d97706"; users = arc.data.users; expenses = arc.data.expenses; render(); } else { alert("No data for " + val); } }
+  function edit(id) { editId=id; const u=users.find(x=>x.id==id); $('m_name').value=u.name; $('m_mob').value=u.mob; $('m_pkg').value=u.pkg; $('m_bill').value=u.bill; $('m_user').value=u.user||''; $('m_area').value=u.area || ''; $('m_prevDue').value = u.prevDue || 0; $('m_expDate').value = u.expDate || ''; $('modalOv').style.display='flex'; }
+  function saveUser() { const d = { name: $('m_name').value, mob: $('m_mob').value, pkg: $('m_pkg').value, user: $('m_user').value, bill: Number($('m_bill').value), prevDue: Number($('m_prevDue').value), area: $('m_area').value, expDate: $('m_expDate').value }; if(!d.name) return alert("Name required"); if(editId) { const idx = users.findIndex(x=>x.id==editId); users[idx] = {...users[idx], ...d}; enqueue({ type: 'updateUser', id: editId, data: { name: d.name, mob: d.mob, pkg: d.pkg, user_id: d.user || null, bill: d.bill, prev_due: d.prevDue, area: d.area, exp_date: d.expDate }}); addLog(`Edited: ${d.name}`, null); } else { const id = Date.now().toString(); users.unshift({...d, id, conn:'Active', pay:'Unpaid', due:0, prevDue:d.prevDue||0, payDate:null}); enqueue({ type: 'upsertUser', data: { id, name: d.name, mob: d.mob, pkg: d.pkg, user_id: d.user || null, bill: d.bill, conn: 'Active', pay: 'Unpaid', due: 0, prev_due: d.prevDue || 0, pay_date: null, area: d.area, exp_date: d.expDate }}); addLog(`Added: ${d.name}`, null); } $('modalOv').style.display='none'; saveData(); }
+  
+  function fixSyncIssue() {
+      const queue = JSON.parse(localStorage.getItem('wifi_sync_queue') || '[]');
+      if (queue.length === 0) { alert("কোনো ডাটা আটকে নেই! (Queue Empty)"); return; }
+      if(confirm("ডাটা কিউ ক্লিয়ার করতে চান?")) { localStorage.removeItem('wifi_sync_queue'); alert("কিউ ক্লিয়ার করা হয়েছে!"); location.reload(); }
+  }
+
+  // --- MANAGE MODAL ---
+  let currentManageId = null;
+  function openManageModal(id) {
+    currentManageId = id; const u = users.find(x => x.id === id); if(!u) return;
+    const modal = $('manageContent');
+    modal.innerHTML = `
+        <div style="margin-bottom:10px; background:#f8fafc; padding:8px; border-radius:6px; text-align:center;">
+            <div style="font-weight:bold; font-size:15px; color:#334155;">${u.name}</div>
+            <div style="color:#64748b; font-size:11px;">ID: ${u.id} | Mob: ${u.mob}</div>
+        </div>
+        <div class="control-box">
+            <span class="cb-label">CONNECTION STATUS</span>
+            <select id="mpConn" class="wap-sel" onchange="quickUpdConn('${u.id}', this.value)">
+                <option value="Active" ${u.conn==='Active'?'selected':''}>Active (Running)</option>
+                <option value="Expired" ${u.conn==='Expired'?'selected':''}>Expired (No Net)</option>
+                <option value="Free" ${u.conn==='Free'?'selected':''}>Free User</option>
+                <option value="Inactive" ${u.conn==='Inactive'?'selected':''}>Inactive (Disabled)</option>
+            </select>
+        </div>
+        ${u.conn === 'Active' ? `
+        <div class="control-box" style="background:#f0fdf4; border-color:#bbf7d0;">
+            <span class="cb-label" style="color:#15803d;">PAYMENT STATUS</span>
+            <div style="display:flex; gap:10px;">
+                <select id="mpPay" class="wap-sel" onchange="quickUpdPay('${u.id}', this.value)">
+                    <option value="Unpaid" ${u.pay==='Unpaid'?'selected':''}>Unpaid</option>
+                    <option value="Paid" ${u.pay==='Paid'?'selected':''}>Paid</option>
+                </select>
+                <input id="mpDue" type="number" class="wap-inp" value="${u.due}" onchange="quickUpdDue('${u.id}', this.value)" placeholder="Due" style="width:80px; text-align:center; color:#dc2626; font-weight:bold;">
+            </div>
+        </div>
+        ` : ''}
+        <div class="manage-grid">
+            <div style="flex:1"><label style="font-size:10px; font-weight:bold; color:#666;">Monthly Bill</label><input type="number" class="wap-inp" value="${u.bill}" onchange="quickUpdField('${u.id}', 'bill', this.value)"></div>
+            <div style="flex:1"><label style="font-size:10px; font-weight:bold; color:#666;">Prev Due</label><input type="number" class="wap-inp" value="${u.prevDue}" onchange="quickUpdField('${u.id}', 'prev_due', this.value)"></div>
+        </div>
+        <div class="manage-btn-row">
+             <button class="wap-btn" style="background:#3b5998; color:#fff; flex:1;" onclick="closeManageModal()"><i class="fas fa-save"></i> Save</button>
+             <button class="wap-btn" style="background:#dc2626; color:#fff; flex:1;" onclick="deleteUserQuick('${u.id}')"><i class="fas fa-trash"></i> Delete</button>
+        </div>`;
+    $('manageClientOv').style.display='flex';
+  }
+  function closeManageModal() { $('manageClientOv').style.display='none'; }
+  function quickUpdConn(id, v) { updConn(id, v); openManageModal(id); }
+  function quickUpdPay(id, v) { updPay(id, v); }
+  function quickUpdDue(id, v) { updDue(id, v); }
+  function quickUpdField(id, field, value) { const u = users.find(x => x.id === id); const val = Number(value); if(field === 'bill') u.bill = val; if(field === 'prev_due') u.prevDue = val; addLog(`${u.name}: Updated ${field}`, `${val}`); const updateData = {}; updateData[field] = val; enqueue({ type: 'updateUser', id: id, data: updateData }); saveData(); }
+  function deleteUserQuick(id) { if(confirm("Are you sure you want to DELETE this user permanently?")) { users = users.filter(x => x.id !== id); saveData(); $('manageClientOv').style.display='none'; alert("User deleted locally."); } }
+
+  function openBulkModal() { const list=$('bulkList'); list.innerHTML=''; users.forEach(u=>{ if((u.due>0 || u.prevDue>0) && u.conn==='Active') { const total = u.due + u.prevDue; list.innerHTML+=`<tr><td>${u.name}</td><td>${total}</td><td><button class="wap-btn" style="padding:2px 5px;" onclick="wa('${u.mob}', 'Unpaid', ${u.due}, ${u.prevDue})">Send</button></td></tr>`; }}); $('bulkOv').style.display='flex'; }
+  function wa(mob, st, due, prev) { if(!mob) return alert("No mobile number"); let msg = ""; if(st==='Paid' && due===0 && prev===0) msg = "আপনাকে ধন্যবাদ। আপনার ইন্টারনেট বিল পরিশোধ হয়েছে।"; else msg = `আপনার ইন্টারনেট বিল বকেয়া আছে: ${due+prev} টাকা। দয়া করে পরিশোধ করুন।`; window.open(`https://wa.me/88${mob}?text=${encodeURIComponent(msg)}`, '_blank'); }
+  function printInvoice(id) { const u=users.find(x=>x.id==id); $('inv_name').innerText=u.name; $('inv_id').innerText=u.user||'N/A'; $('inv_mob').innerText=u.mob; $('inv_area').innerText=u.area||''; $('inv_pkg').innerText=u.pkg; $('inv_date').innerText=getTodayStr(); $('inv_bill').innerText=u.bill; $('inv_prev').innerText=u.prevDue; $('inv_total').innerText=(u.bill+u.prevDue); window.print(); }
+  function openHistory(id) { $('historyName').innerText = users.find(x=>x.id==id).name; $('historyList').innerHTML = '<tr><td colspan="4">No history</td></tr>'; $('historyOv').style.display='flex'; }
+
   window.addEventListener('online', flushSyncQueue);
   $('search').addEventListener('input', render);
   init();
